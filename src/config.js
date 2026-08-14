@@ -1,14 +1,35 @@
 const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+
+const SECRET_FILE = path.join(ROOT_DIR, 'data', 'session_secret');
+
+function ensureDir(dir) {
+  try { fs.mkdirSync(dir, { recursive: true }); } catch (e) { /* ignore */ }
+}
+
+function loadOrCreateSecret() {
+  if (process.env.SESSION_SECRET) return process.env.SESSION_SECRET;
+  try {
+    const s = fs.readFileSync(SECRET_FILE, 'utf8').trim();
+    if (s) return s;
+  } catch (e) {
+    // fallthrough to create
+  }
+  const secret = crypto.randomBytes(32).toString('hex');
+  ensureDir(path.dirname(SECRET_FILE));
+  try { fs.writeFileSync(SECRET_FILE, secret, { mode: 0o600 }); } catch (e) { /* ignore write errors */ }
+  return secret;
+}
 
 const config = {
   port: parseInt(process.env.PORT || '8080', 10),
   galleryRoot: path.resolve(process.env.GALLERY_ROOT || '/gallery'),
   adminUser: process.env.ADMIN_USER || 'admin',
   adminPassword: process.env.ADMIN_PASSWORD || 'admin',
-  sessionSecret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+  sessionSecret: loadOrCreateSecret(),
   thumbDir: process.env.THUMB_DIR || path.join(ROOT_DIR, 'data', 'thumbs'),
   thumbSize: parseInt(process.env.THUMB_SIZE || '320', 10),
   thumbQuality: parseInt(process.env.THUMB_QUALITY || '80', 10),

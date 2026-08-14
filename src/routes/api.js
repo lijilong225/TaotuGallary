@@ -1,13 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
+const { body, validationResult } = require('express-validator');
 const { config } = require('../config');
-const { verify, ensureDefaultUser } = require('../auth');
+const { verify, isDefaultPassword, changePassword } = require('../auth');
 const gallery = require('../gallery');
 const thumb = require('../thumbnail');
 const { mimeType, isImageFile, isArchiveFile, isVideoFile } = require('../utils');
+const logger = require('../logger');
+const { loginLimiter, csrfProtection } = require('../middleware');
 
 const router = express.Router();
+
+// 应用登录速率限制到整个路由
+router.use(loginLimiter);
 
 function isAuth(req) {
   return req.session && req.session.user;
@@ -35,23 +41,74 @@ function sendRawImage(res, filePath, userPath) {
 
 router.get('/ping', (req, res) => res.json({ ok: true }));
 
+// 获取CSRF令牌
+router.get('/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
 router.get('/me', (req, res) => {
   if (isAuth(req)) return res.json({ user: req.session.user });
   res.status(401).json({ error: '未登录' });
 });
 
-router.post('/login', (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: '请输入用户名和密码' });
-  if (verify(username, password)) {
-    req.session.user = username;
-    return res.json({ user: username });
+router.post('/login', [
+  body('username').trim().notEmpty().withMessage('用户名不能为空'),
+  body('password').notEmpty().withMessage('密码不能为空'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
   }
-  res.status(401).json({ error: '用户名或密码错误' });
+
+  const { username, password } = req.body;
+  try {
+    const ok = await verify(username, password);
+    if (ok) {
+      req.session.user = username;
+      const needsPasswordChange = await isDefaultPassword(username);
+      logger.info('用户登录成功', { user: username });
+      return res.json({ user: username, needsPasswordChange });
+    }
+    logger.warn('登录失败 - 凭证错误', { username });
+    return res.status(401).json({ error: '用户名或密码错误' });
+  } catch (e) {
+    logger.error('认证失败', { username, error: e.message });
+    return res.status(500).json({ error: '认证失败' });
+  }
+});
+
+// 修改密码 - 需要CSRF保护
+router.post('/change-password', csrfProtection, [
+  body('oldPassword').notEmpty().withMessage('当前密码不能为空'),
+  body('newPassword').isLength({ min: 6 }).withMessage('新密码至少6个字符'),
+], requireAuth, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ error: errors.array()[0].msg });
+  }
+
+  const { oldPassword, newPassword } = req.body;
+  const username = req.session.user;
+
+  try {
+    const result = await changePassword(username, oldPassword, newPassword);
+    if (result.success) {
+      logger.info('用户修改密码成功', { user: username });
+      return res.json({ success: true });
+    }
+    return res.status(400).json({ error: result.error });
+  } catch (e) {
+    logger.error('修改密码异常', { user: username, error: e.message });
+    return res.status(500).json({ error: '修改密码失败' });
+  }
 });
 
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => res.json({ ok: true }));
+  const user = req.session.user;
+  req.session.destroy(() => {
+    logger.info('用户登出', { user });
+    res.json({ ok: true });
+  });
 });
 
 router.get('/tree', requireAuth, async (req, res, next) => {
@@ -63,7 +120,9 @@ router.get('/tree', requireAuth, async (req, res, next) => {
 router.get('/browse', requireAuth, async (req, res, next) => {
   try {
     const p = req.query.path || '';
-    res.json(await gallery.listGalleryDir(p));
+    const pageNum = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 50));
+    res.json(await gallery.listGalleryDir(p, pageNum, pageSize));
   } catch (e) { next(e); }
 });
 
@@ -174,11 +233,6 @@ router.get('/video', requireAuth, async (req, res, next) => {
     if (!isVideoFile(filePath)) return res.status(400).json({ error: '不支持的文件类型' });
     sendVideoStream(req, res, filePath);
   } catch (e) { next(e); }
-});
-
-router.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ error: err.message || '服务器错误' });
 });
 
 module.exports = router;

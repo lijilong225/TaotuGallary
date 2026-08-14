@@ -70,7 +70,7 @@ async function buildTree() {
   return walk(config.galleryRoot);
 }
 
-async function listGalleryDir(userPath) {
+async function listGalleryDir(userPath, pageNum = 1, pageSize = 50) {
   const dir = safeResolve(userPath);
   if (!(await isDirectory(dir))) throw new Error('not a directory');
 
@@ -98,7 +98,37 @@ async function listGalleryDir(userPath) {
   }
 
   const sortBy = (arr) => arr.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
-  return { folders: sortBy(folders), archives: sortBy(archives), images: sortBy(images), videos: sortBy(videos) };
+  folders = sortBy(folders);
+  archives = sortBy(archives);
+  images = sortBy(images);
+  videos = sortBy(videos);
+
+  // 文件夹和压缩包不分页，直接返回
+  // 图片和视频进行分页
+  const allMedia = [...images, ...videos];
+  const totalCount = allMedia.length;
+  const totalPages = Math.ceil(totalCount / pageSize);
+  const page = Math.max(1, Math.min(pageNum, totalPages || 1));
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  const pagedMedia = allMedia.slice(start, end);
+
+  // 按照原始类型分类分页后的媒体
+  const pagedImages = pagedMedia.filter(e => e.type === 'image');
+  const pagedVideos = pagedMedia.filter(e => e.type === 'video');
+
+  return {
+    folders,
+    archives,
+    images: pagedImages,
+    videos: pagedVideos,
+    pagination: {
+      pageNum: page,
+      pageSize: pageSize,
+      totalCount: totalCount,
+      totalPages: totalPages,
+    },
+  };
 }
 
 async function countChildImages(dir) {

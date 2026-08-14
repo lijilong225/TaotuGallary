@@ -4,12 +4,22 @@
 
 ## 功能特性
 
-1. **Web 管理 + 登录认证**：默认管理员账号 `admin` / 密码 `admin`（首次启动写入 `data/users.json`，可改密码）
+1. **Web 管理 + 登录认证**：默认管理员账号 `admin` / 密码 `admin`（首次启动写入 `data/users.json`，需强制修改）
 2. **映射目录管理**：通过环境变量指定根目录，每个子目录即一个套图集合，可包含多个子文件夹与压缩包
 3. **左侧目录树 + 右侧浏览区**：点击左侧目录，右侧展示其中套图与图片
 4. **压缩包浏览**：支持 `.zip`（adm-zip 纯 JS）与 `.rar`（libarchive `bsdtar`）
 5. **主流图片格式**：JPG/PNG/GIF/WebP/BMP/TIFF/AVIF/SVG/ICO/HEIC 等
 6. **宫格缩略图**：进入目录时刷新缩略图（sharp 生成 WebP 缓存），点击图片全屏查看原图，支持左右键切换
+7. **性能优化**：
+   - 图片和视频列表分页显示（默认每页50项，最多100项）
+   - HTTP 缓存策略，减少重复请求
+   - 缩略图智能缓存和自动失效
+8. **安全加固**：
+   - 登录速率限制（15分钟内最多5次尝试）
+   - CSRF 保护（针对状态改变的请求）
+   - 路径遍历防护
+   - 结构化日志记录（错误和审计日志）
+   - 首次启动强制修改默认密码
 
 ## 快速开始（Docker Compose）
 
@@ -43,6 +53,37 @@ docker run -d -p 8080:8080 \
   -v /data/pictures:/gallery \
   -v gallery-data:/app/data \
   gallery-manager
+
+## 从 GHCR 拉取镜像并运行（CI 推送后）
+
+如果仓库启用了 CI 将镜像推送到 GitHub Container Registry，你可以直接拉取 `latest` 镜像：
+
+```bash
+# 私有包需要先登录（使用 PAT）
+docker login ghcr.io -u <USERNAME> -p <PERSONAL_ACCESS_TOKEN>
+
+docker pull ghcr.io/<owner>/<repo>:latest
+docker run -d -p 8080:8080 \
+  -e GALLERY_ROOT=/gallery \
+  -v /data/pictures:/gallery \
+  -v gallery-data:/app/data \
+  ghcr.io/<owner>/<repo>:latest
+```
+
+### 生成并使用 GitHub PAT（快速说明）
+
+1. 打开 https://github.com/settings/tokens 。
+2. 点击 **Generate new token** → **Generate new token (classic)**（或使用新版 UI）。
+3. 填写名称并选择有效期；在 **Scopes** 中至少勾选：
+  - `read:packages`（拉取私有镜像）
+  - `write:packages`（如需推送镜像）
+4. 生成后**复制**令牌（仅显示一次）。
+5. 本地登录 GHCR：
+```bash
+echo <PERSONAL_ACCESS_TOKEN> | docker login ghcr.io -u <USERNAME> --password-stdin
+```
+
+请妥善保管 PAT，不要在公开仓库中明文提交。若仅需从 CI 拉取私有镜像，可在目标系统使用 repository-level 或 org-level secrets 自动登录。
 ```
 
 ## 本地开发

@@ -3,3 +3,35 @@ data/
 gallery/
 *.log
 .DS_Store
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# npm
+package-lock.json
+npm-debug.log
+yarn.lock
+pnpm-lock.yaml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+desktop.ini
+
+# 构建输出
+dist/
+build/
+.cache
+
+# 临时文件
+*.tmp
+*.bak
+
