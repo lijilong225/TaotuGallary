@@ -223,8 +223,9 @@
     const hasFolders = data.folders && data.folders.length;
     const hasArchives = data.archives && data.archives.length;
     const hasImages = data.images && data.images.length;
+    const hasVideos = data.videos && data.videos.length;
 
-    if (!hasFolders && !hasArchives && !hasImages) {
+    if (!hasFolders && !hasArchives && !hasImages && !hasVideos) {
       showEmpty('该目录下暂无内容');
       return;
     }
@@ -237,14 +238,14 @@
       $('#archive-grid').classList.remove('hidden');
       renderFolderCards(data.archives, $('#archive-grid'));
     }
+    const mediaItems = [];
     if (hasImages) {
-      const imageItems = data.images.map((img) => ({
-        type: 'file',
-        path: img.rel,
-        name: img.name,
-      }));
-      renderImageGrid(imageItems);
+      data.images.forEach((img) => mediaItems.push({ type: 'file', mime: 'image', path: img.rel, name: img.name }));
     }
+    if (hasVideos) {
+      data.videos.forEach((v) => mediaItems.push({ type: 'file', mime: 'video', path: v.rel, name: v.name }));
+    }
+    if (mediaItems.length) renderMediaGrid(mediaItems);
   }
 
   function renderFolderCards(items, container) {
@@ -276,23 +277,24 @@
     clearArea();
     try {
       const data = await api('/api/archive-images?path=' + encodeURIComponent(relPath));
-      const imageItems = (data.images || []).map((img) => ({
-        type: 'archive',
-        path: relPath,
-        entry: img.entry,
-        name: img.name,
+      const mediaItems = [];
+      (data.images || []).forEach((img) => mediaItems.push({
+        type: 'archive', mime: 'image', path: relPath, entry: img.entry, name: img.name,
       }));
-      if (!imageItems.length) {
-        showEmpty('压缩包内没有图片');
+      (data.videos || []).forEach((v) => mediaItems.push({
+        type: 'archive', mime: 'video', path: relPath, entry: v.entry, name: v.name,
+      }));
+      if (!mediaItems.length) {
+        showEmpty('压缩包内没有图片或视频');
         return;
       }
-      renderImageGrid(imageItems);
+      renderMediaGrid(mediaItems);
     } catch (err) {
       showEmpty(err.message);
     }
   }
 
-  /* ---------------- Image grid ---------------- */
+  /* ---------------- Media grid ---------------- */
   function thumbUrl(item) {
     const p = encodeURIComponent(item.path);
     if (item.type === 'archive') {
@@ -309,7 +311,15 @@
     return `/api/image?path=${p}`;
   }
 
-  function renderImageGrid(items) {
+  function videoUrl(item) {
+    const p = encodeURIComponent(item.path);
+    if (item.type === 'archive') {
+      return `/api/video?path=${p}&entry=${encodeURIComponent(item.entry)}`;
+    }
+    return `/api/video?path=${p}`;
+  }
+
+  function renderMediaGrid(items) {
     state.imageList = items;
     const grid = $('#image-grid');
     grid.innerHTML = '';
@@ -327,6 +337,14 @@
       name.textContent = item.name;
       box.appendChild(img);
       box.appendChild(name);
+
+      if (item.mime === 'video') {
+        const badge = document.createElement('div');
+        badge.className = 'video-badge';
+        badge.innerHTML = '&#9658;';
+        box.appendChild(badge);
+        box.classList.add('video-box');
+      }
 
       box.addEventListener('click', () => openLightbox(idx));
       grid.appendChild(box);
@@ -352,13 +370,14 @@
   /* ---------------- Lightbox ---------------- */
   function openLightbox(index) {
     state.lbIndex = index;
-    updateLightbox();
     $('#lightbox').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    updateLightbox();
   }
 
   function closeLightbox() {
     $('#lightbox').classList.add('hidden');
+    stopVideo();
     $('#lb-img').src = '';
     document.body.style.overflow = '';
   }
@@ -366,8 +385,37 @@
   function updateLightbox() {
     const item = state.imageList[state.lbIndex];
     if (!item) return;
-    $('#lb-img').src = rawUrl(item);
     $('#lb-counter').textContent = `${state.lbIndex + 1} / ${state.imageList.length}`;
+
+    if (item.mime === 'video') {
+      $('#lb-img').classList.add('hidden');
+      $('#lb-video-wrap').classList.remove('hidden');
+      const video = $('#lb-video');
+      stopVideo();
+      video.src = videoUrl(item);
+      video.load();
+      video.play().catch(() => {});
+    } else {
+      stopVideo();
+      $('#lb-video-wrap').classList.add('hidden');
+      $('#lb-img').classList.remove('hidden');
+      $('#lb-img').src = rawUrl(item);
+    }
+  }
+
+  function stopVideo() {
+    const video = $('#lb-video');
+    if (document.pictureInPictureElement === video) {
+      document.exitPictureInPicture().catch(() => {});
+    }
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    $('#vc-progress').value = 0;
+    $('#vc-time').textContent = '0:00 / 0:00';
   }
 
   function nextImage() {
@@ -386,11 +434,89 @@
   $('#lb-next').addEventListener('click', nextImage);
   $('#lb-prev').addEventListener('click', prevImage);
 
+  /* ---------------- Video controls ---------------- */
+  const video = $('#lb-video');
+
+  function fmtTime(s) {
+    if (!isFinite(s) || s < 0) s = 0;
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${String(sec).padStart(2, '0')}`;
+  }
+
+  $('#vc-play').addEventListener('click', () => {
+    if (video.paused) video.play();
+    else video.pause();
+  });
+
+  video.addEventListener('play', () => { $('#vc-play').innerHTML = '&#10074;&#10074;'; });
+  video.addEventListener('pause', () => { $('#vc-play').innerHTML = '&#9658;'; });
+
+  video.addEventListener('timeupdate', () => {
+    if (!video.duration) return;
+    $('#vc-progress').value = (video.currentTime / video.duration) * 1000;
+    $('#vc-time').textContent = `${fmtTime(video.currentTime)} / ${fmtTime(video.duration)}`;
+  });
+
+  $('#vc-progress').addEventListener('input', () => {
+    if (!video.duration) return;
+    video.currentTime = (parseInt($('#vc-progress').value, 10) / 1000) * video.duration;
+  });
+
+  video.addEventListener('loadedmetadata', () => {
+    $('#vc-time').textContent = `0:00 / ${fmtTime(video.duration)}`;
+  });
+
+  $('#vc-volume').addEventListener('input', () => {
+    const v = parseInt($('#vc-volume').value, 10) / 100;
+    video.volume = v;
+    video.muted = v === 0;
+    $('#vc-mute').innerHTML = v === 0 ? '&#128263;' : '&#128266;';
+  });
+
+  $('#vc-mute').addEventListener('click', () => {
+    video.muted = !video.muted;
+    $('#vc-mute').innerHTML = video.muted ? '&#128263;' : '&#128266;';
+  });
+
+  $('#vc-pip').addEventListener('click', async () => {
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (video.requestPictureInPicture) {
+        await video.requestPictureInPicture();
+      }
+    } catch (err) {
+      console.error('PiP failed:', err);
+    }
+  });
+
+  $('#vc-fullscreen').addEventListener('click', () => {
+    const wrap = $('#lb-video-wrap');
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else if (wrap.requestFullscreen) {
+      wrap.requestFullscreen();
+    }
+  });
+
+  video.addEventListener('dblclick', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.fullscreenEnabled) $('#lb-video-wrap').requestFullscreen();
+  });
+
   document.addEventListener('keydown', (e) => {
     if ($('#lightbox').classList.contains('hidden')) return;
+    if ($('#lb-video-wrap').classList.contains('hidden')) {
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowRight') nextImage();
+      else if (e.key === 'ArrowLeft') prevImage();
+      return;
+    }
     if (e.key === 'Escape') closeLightbox();
-    else if (e.key === 'ArrowRight') nextImage();
-    else if (e.key === 'ArrowLeft') prevImage();
+    else if (e.key === ' ') { e.preventDefault(); if (video.paused) video.play(); else video.pause(); }
+    else if (e.key === 'ArrowRight') { video.currentTime = Math.min(video.duration, video.currentTime + 5); }
+    else if (e.key === 'ArrowLeft') { video.currentTime = Math.max(0, video.currentTime - 5); }
   });
 
   $('#lightbox').addEventListener('click', (e) => {

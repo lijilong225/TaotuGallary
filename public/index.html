@@ -54,13 +54,25 @@
 
   <div id="lightbox" class="lightbox hidden">
     <div class="lightbox-toolbar">
-      <button id="lb-prev" class="lb-btn" title="上一张">&#10094;</button>
+      <button id="lb-prev" class="lb-btn" title="上一个">&#10094;</button>
       <span id="lb-counter" class="lb-counter"></span>
-      <button id="lb-next" class="lb-btn" title="下一张">&#10095;</button>
+      <button id="lb-next" class="lb-btn" title="下一个">&#10095;</button>
       <button id="lb-close" class="lb-btn" title="关闭">&#10005;</button>
     </div>
     <div class="lightbox-stage">
       <img id="lb-img" alt="">
+      <div id="lb-video-wrap" class="video-wrap hidden">
+        <video id="lb-video" playsinline></video>
+        <div class="video-controls">
+          <button id="vc-play" class="vc-btn" title="播放/暂停">&#10074;&#10074;</button>
+          <input type="range" id="vc-progress" min="0" max="1000" value="0" step="1" title="进度">
+          <span id="vc-time" class="vc-time">0:00 / 0:00</span>
+          <button id="vc-mute" class="vc-btn" title="静音">&#128266;</button>
+          <input type="range" id="vc-volume" min="0" max="100" value="100" step="1" title="音量">
+          <button id="vc-pip" class="vc-btn" title="小窗画中画">&#10697;</button>
+          <button id="vc-fullscreen" class="vc-btn" title="浏览器全屏">&#9974;</button>
+        </div>
+      </div>
     </div>
   </div>
 

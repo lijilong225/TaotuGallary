@@ -1,7 +1,7 @@
 FROM node:22-slim
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libarchive-tools \
+  && apt-get install -y --no-install-recommends libarchive-tools ffmpeg \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

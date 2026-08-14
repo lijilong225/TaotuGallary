@@ -361,6 +361,24 @@ html, body {
 
 .thumb-box.loading { animation: pulse 1.2s infinite; }
 
+.video-box .video-badge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  border: 2px solid rgba(255,255,255,.8);
+}
+
 @keyframes pulse {
   0%, 100% { opacity: .4; }
   50% { opacity: 1; }
@@ -382,6 +400,7 @@ html, body {
   align-items: center;
   justify-content: center;
   min-height: 0;
+  position: relative;
 }
 
 #lb-img {
@@ -389,6 +408,89 @@ html, body {
   max-height: 96%;
   object-fit: contain;
 }
+
+/* ---------- Video player ---------- */
+.video-wrap {
+  position: relative;
+  width: 92%;
+  max-width: 1100px;
+  max-height: 92%;
+}
+
+#lb-video {
+  width: 100%;
+  max-height: calc(100vh - 180px);
+  background: #000;
+  border-radius: 4px;
+  display: block;
+}
+
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(transparent, rgba(0,0,0,.8));
+  border-radius: 0 0 4px 4px;
+}
+
+.vc-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .2s;
+}
+
+.vc-btn:hover { background: rgba(255,255,255,.4); }
+
+.vc-time {
+  color: #fff;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.video-controls input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,.35);
+  outline: none;
+  cursor: pointer;
+  flex: 1;
+  min-width: 40px;
+}
+
+.video-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+.video-controls input[type="range"]::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+
+#vc-volume { flex: 0 0 90px; }
 
 .lightbox-toolbar {
   position: absolute;

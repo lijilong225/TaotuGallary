@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { config } = require('./config');
-const { isImageFile, isArchiveFile, isHiddenName } = require('./utils');
+const { isImageFile, isArchiveFile, isHiddenName, isVideoFile } = require('./utils');
 const { listEntries } = require('./archive');
 
 function toRel(p) {
@@ -78,6 +78,7 @@ async function listGalleryDir(userPath) {
   const folders = [];
   const archives = [];
   const images = [];
+  const videos = [];
 
   for (const name of entries) {
     if (isHiddenName(name)) continue;
@@ -89,13 +90,15 @@ async function listGalleryDir(userPath) {
       folders.push({ name, rel: toRel(full), type: 'dir', count: childCount });
     } else if (isArchiveFile(name)) {
       archives.push({ name, rel: toRel(full), type: 'archive' });
+    } else if (isVideoFile(name)) {
+      videos.push({ name, rel: toRel(full), type: 'video' });
     } else if (isImageFile(name)) {
       images.push({ name, rel: toRel(full), type: 'image' });
     }
   }
 
   const sortBy = (arr) => arr.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
-  return { folders: sortBy(folders), archives: sortBy(archives), images: sortBy(images) };
+  return { folders: sortBy(folders), archives: sortBy(archives), images: sortBy(images), videos: sortBy(videos) };
 }
 
 async function countChildImages(dir) {
@@ -114,13 +117,18 @@ async function countChildImages(dir) {
   return count;
 }
 
-async function listArchiveImages(archiveRel) {
+async function listArchiveMedia(archiveRel) {
   const full = safeResolve(archiveRel);
   if (!exists(full)) throw new Error('archive not found');
   const entries = await listEntries(full, full);
-  return entries
-    .filter(e => !e.isDirectory && isImageFile(e.name))
-    .map(e => ({ name: e.name, entry: e.name }));
+  const media = entries.filter(e => !e.isDirectory && (isImageFile(e.name) || isVideoFile(e.name)));
+  const images = [];
+  const videos = [];
+  for (const e of media) {
+    if (isVideoFile(e.name)) videos.push({ name: e.name, entry: e.name, type: 'video' });
+    else images.push({ name: e.name, entry: e.name, type: 'image' });
+  }
+  return { images, videos };
 }
 
-module.exports = { buildTree, listGalleryDir, listArchiveImages, safeResolve, toRel, exists, isDirectory };
+module.exports = { buildTree, listGalleryDir, listArchiveMedia, safeResolve, toRel, exists, isDirectory };
