@@ -546,6 +546,13 @@ html, body {
   gap: 12px;
   padding: 14px;
   background: linear-gradient(rgba(0,0,0,.5), transparent);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.lightbox-toolbar .lb-btn,
+.lightbox-toolbar .lb-counter {
+  pointer-events: auto;
 }
 
 .lb-btn {
