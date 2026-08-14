@@ -95,7 +95,7 @@
 
     const icon = document.createElement('span');
     icon.className = 'tree-icon';
-    icon.textContent = '📁';
+    icon.textContent = node.type === 'archive' ? '🗜️' : '📁';
     item.appendChild(icon);
 
     const label = document.createElement('span');
@@ -105,7 +105,7 @@
 
     item.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (node.children && node.children.length) {
+      if (node.type === 'dir' && node.children && node.children.length) {
         wrapper.classList.toggle('open');
         toggle.textContent = wrapper.classList.contains('open') ? '▼' : '▶';
       }
@@ -149,7 +149,11 @@
     });
     state.currentPath = node.rel;
     state.imageList = [];
-    openDirectory(node.rel);
+    if (node.type === 'archive') {
+      openArchive(node.rel);
+    } else {
+      openDirectory(node.rel);
+    }
   }
 
   /* ---------------- Breadcrumb ---------------- */

@@ -55,6 +55,13 @@ async function buildTree() {
           type: 'dir',
           children: await walk(full),
         });
+      } else if (isArchiveFile(name)) {
+        out.push({
+          name,
+          rel: toRel(full),
+          type: 'archive',
+          children: [],
+        });
       }
     }
     out.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
