@@ -1,0 +1,18 @@
+services:
+  gallery:
+    build: .
+    container_name: gallery-manager
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - GALLERY_ROOT=/gallery
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - SESSION_SECRET=${SESSION_SECRET:-please-change-me}
+    volumes:
+      - ${GALLERY_DIR:-./gallery}:/gallery
+      - gallery-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  gallery-data:

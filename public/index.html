@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>套图管理器</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div id="login-view" class="login-view hidden">
+    <div class="login-box">
+      <h1>套图管理器</h1>
+      <form id="login-form">
+        <div class="field">
+          <label>用户名</label>
+          <input type="text" id="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label>密码</label>
+          <input type="password" id="password" autocomplete="current-password" required>
+        </div>
+        <div id="login-error" class="error hidden"></div>
+        <button type="submit" class="btn-primary">登 录</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="main-view" class="main-view hidden">
+    <header class="topbar">
+      <div class="brand">套图管理器</div>
+      <div class="topbar-right">
+        <span id="current-user" class="user"></span>
+        <button id="btn-logout" class="btn-ghost">退出登录</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">目录</div>
+        <div id="tree" class="tree"></div>
+      </aside>
+
+      <section class="content">
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <div id="browse-area" class="browse-area">
+          <div id="empty-tip" class="empty hidden">请选择左侧目录，或点击套图浏览图片</div>
+          <div id="folder-grid" class="folder-grid"></div>
+          <div id="archive-grid" class="folder-grid archive-grid"></div>
+          <div id="image-grid" class="image-grid"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="lightbox" class="lightbox hidden">
+    <div class="lightbox-toolbar">
+      <button id="lb-prev" class="lb-btn" title="上一张">&#10094;</button>
+      <span id="lb-counter" class="lb-counter"></span>
+      <button id="lb-next" class="lb-btn" title="下一张">&#10095;</button>
+      <button id="lb-close" class="lb-btn" title="关闭">&#10005;</button>
+    </div>
+    <div class="lightbox-stage">
+      <img id="lb-img" alt="">
+    </div>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

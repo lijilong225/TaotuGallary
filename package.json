@@ -1,0 +1,20 @@
+{
+  "name": "gallery-manager",
+  "version": "1.0.0",
+  "description": "套图管理器 - 基于 Web 的图片套图浏览与管理工具",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.12",
+    "bcryptjs": "^2.4.3",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "sharp": "^0.33.4"
+  }
+}
