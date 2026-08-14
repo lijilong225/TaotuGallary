@@ -15,22 +15,57 @@ function isRar(name) {
   return name.toLowerCase().endsWith('.rar');
 }
 
+const MONTHS = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
+
+function parseBsdtarTime(fields) {
+  for (let i = 0; i < fields.length; i++) {
+    const m = MONTHS[fields[i]];
+    if (m === undefined) continue;
+    const day = parseInt(fields[i + 1], 10);
+    const tok = fields[i + 2];
+    if (isNaN(day) || !tok) return null;
+    const now = new Date();
+    let year = now.getFullYear();
+    let hour = 0;
+    let min = 0;
+    if (tok.includes(':')) {
+      const [hh, mm] = tok.split(':').map(Number);
+      hour = hh || 0;
+      min = mm || 0;
+    } else {
+      year = parseInt(tok, 10) || year;
+    }
+    return new Date(year, m, day, hour, min).getTime();
+  }
+  return null;
+}
+
 async function listEntries(filePath, ext) {
   if (isRar(ext)) {
-    const { stdout } = await execFileAsync('bsdtar', ['-tf', filePath]);
+    const { stdout } = await execFileAsync('bsdtar', ['-tvf', filePath]);
     return stdout.split('\n')
       .map(l => l.trim())
       .filter(Boolean)
-      .map(l => ({
-        name: normalizeArchiveEntry(l),
-        isDirectory: l.endsWith('/'),
-      }));
+      .map(l => {
+        const fields = l.split(' ');
+        let time = null;
+        let name = '';
+        for (let i = 0; i < fields.length; i++) {
+          if (MONTHS[fields[i]] !== undefined) {
+            time = parseBsdtarTime(fields);
+            name = fields.slice(i + 3).join(' ').trim();
+            break;
+          }
+        }
+        return { name: normalizeArchiveEntry(name), isDirectory: l.endsWith('/'), mtime: time };
+      });
   }
   const zip = new AdmZip(filePath);
   return zip.getEntries().map(e => ({
     name: normalizeArchiveEntry(e.entryName),
     isDirectory: e.isDirectory,
     size: e.header.size,
+    mtime: e.header.time ? new Date(e.header.time).getTime() : null,
   }));
 }
 

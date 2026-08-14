@@ -87,13 +87,13 @@ async function listGalleryDir(userPath) {
     if (!stat) continue;
     if (stat.isDirectory()) {
       const childCount = await countChildImages(full);
-      folders.push({ name, rel: toRel(full), type: 'dir', count: childCount });
+      folders.push({ name, rel: toRel(full), type: 'dir', count: childCount, mtime: stat.mtimeMs });
     } else if (isArchiveFile(name)) {
-      archives.push({ name, rel: toRel(full), type: 'archive' });
+      archives.push({ name, rel: toRel(full), type: 'archive', mtime: stat.mtimeMs });
     } else if (isVideoFile(name)) {
-      videos.push({ name, rel: toRel(full), type: 'video' });
+      videos.push({ name, rel: toRel(full), type: 'video', mtime: stat.mtimeMs });
     } else if (isImageFile(name)) {
-      images.push({ name, rel: toRel(full), type: 'image' });
+      images.push({ name, rel: toRel(full), type: 'image', mtime: stat.mtimeMs });
     }
   }
 
@@ -125,8 +125,8 @@ async function listArchiveMedia(archiveRel) {
   const images = [];
   const videos = [];
   for (const e of media) {
-    if (isVideoFile(e.name)) videos.push({ name: e.name, entry: e.name, type: 'video' });
-    else images.push({ name: e.name, entry: e.name, type: 'image' });
+    if (isVideoFile(e.name)) videos.push({ name: e.name, entry: e.name, type: 'video', mtime: e.mtime });
+    else images.push({ name: e.name, entry: e.name, type: 'image', mtime: e.mtime });
   }
   return { images, videos };
 }

@@ -42,6 +42,17 @@
 
       <section class="content">
         <div class="breadcrumb" id="breadcrumb"></div>
+        <div class="sortbar hidden" id="sortbar">
+          <label>排序：</label>
+          <select id="sort-by">
+            <option value="name">文件名</option>
+            <option value="time">创建时间</option>
+          </select>
+          <select id="sort-order">
+            <option value="asc">正序</option>
+            <option value="desc">倒序</option>
+          </select>
+        </div>
         <div id="browse-area" class="browse-area">
           <div id="empty-tip" class="empty hidden">请选择左侧目录，或点击套图浏览图片</div>
           <div id="folder-grid" class="folder-grid"></div>

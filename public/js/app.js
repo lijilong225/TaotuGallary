@@ -10,6 +10,9 @@
     currentPath: '',
     imageList: [],
     lbIndex: -1,
+    browseData: null,
+    sortBy: 'name',
+    sortOrder: 'asc',
   };
 
   async function api(path, options = {}) {
@@ -67,6 +70,17 @@
   $('#btn-logout').addEventListener('click', async () => {
     try { await api('/api/logout', { method: 'POST' }); } catch {}
     showLogin();
+  });
+
+  /* ---------------- Sorting ---------------- */
+  $('#sort-by').addEventListener('change', (e) => {
+    state.sortBy = e.target.value;
+    if (state.browseData) renderBrowse();
+  });
+
+  $('#sort-order').addEventListener('change', (e) => {
+    state.sortOrder = e.target.value;
+    if (state.browseData) renderBrowse();
   });
 
   /* ---------------- Tree ---------------- */
@@ -196,13 +210,35 @@
   async function openDirectory(relPath) {
     state.currentPath = relPath;
     renderBreadcrumb();
-    clearArea();
     try {
       const data = await api('/api/browse?path=' + encodeURIComponent(relPath || ''));
-      renderBrowse(data);
+      state.browseData = {
+        mode: 'dir',
+        folders: data.folders || [],
+        archives: data.archives || [],
+        images: data.images || [],
+        videos: data.videos || [],
+      };
+      renderBrowse();
     } catch (err) {
       showEmpty(err.message);
     }
+  }
+
+  function sortItems(items, key) {
+    const dir = state.sortOrder === 'desc' ? -1 : 1;
+    return items.slice().sort((a, b) => {
+      let r;
+      if (key === 'time') {
+        const ta = a.mtime != null ? a.mtime : 0;
+        const tb = b.mtime != null ? b.mtime : 0;
+        r = ta - tb;
+        if (r === 0) r = a.name.localeCompare(b.name, 'zh');
+      } else {
+        r = a.name.localeCompare(b.name, 'zh');
+      }
+      return r * dir;
+    });
   }
 
   function clearArea() {
@@ -212,40 +248,53 @@
     $('#archive-grid').innerHTML = '';
     $('#archive-grid').classList.add('hidden');
     $('#image-grid').innerHTML = '';
+    if (state.browseData) {
+      $('#sortbar').classList.remove('hidden');
+    }
   }
 
   function showEmpty(msg) {
+    $('#sortbar').classList.add('hidden');
     $('#empty-tip').textContent = msg;
     $('#empty-tip').classList.remove('hidden');
   }
 
-  function renderBrowse(data) {
-    const hasFolders = data.folders && data.folders.length;
-    const hasArchives = data.archives && data.archives.length;
-    const hasImages = data.images && data.images.length;
-    const hasVideos = data.videos && data.videos.length;
+  function renderBrowse() {
+    const data = state.browseData;
+    if (!data) return;
+    const hasFolders = data.folders.length;
+    const hasArchives = data.archives.length;
+    const hasImages = data.images.length;
+    const hasVideos = data.videos.length;
 
     if (!hasFolders && !hasArchives && !hasImages && !hasVideos) {
       showEmpty('该目录下暂无内容');
       return;
     }
+    clearArea();
 
+    const folders = sortItems(data.folders, state.sortBy);
+    const archives = sortItems(data.archives, state.sortBy);
     if (hasFolders) {
       $('#folder-grid').classList.remove('hidden');
-      renderFolderCards(data.folders, $('#folder-grid'));
+      renderFolderCards(folders, $('#folder-grid'));
     }
     if (hasArchives) {
       $('#archive-grid').classList.remove('hidden');
-      renderFolderCards(data.archives, $('#archive-grid'));
+      renderFolderCards(archives, $('#archive-grid'));
     }
     const mediaItems = [];
     if (hasImages) {
-      data.images.forEach((img) => mediaItems.push({ type: 'file', mime: 'image', path: img.rel, name: img.name }));
+      data.images.forEach((img) => mediaItems.push({
+        type: 'file', mime: 'image', path: img.rel, name: img.name, mtime: img.mtime,
+      }));
     }
     if (hasVideos) {
-      data.videos.forEach((v) => mediaItems.push({ type: 'file', mime: 'video', path: v.rel, name: v.name }));
+      data.videos.forEach((v) => mediaItems.push({
+        type: 'file', mime: 'video', path: v.rel, name: v.name, mtime: v.mtime,
+      }));
     }
-    if (mediaItems.length) renderMediaGrid(mediaItems);
+    if (mediaItems.length) renderMediaGrid(sortItems(mediaItems, state.sortBy));
   }
 
   function renderFolderCards(items, container) {
@@ -274,21 +323,21 @@
   async function openArchive(relPath) {
     state.currentPath = relPath;
     renderBreadcrumb();
-    clearArea();
     try {
       const data = await api('/api/archive-images?path=' + encodeURIComponent(relPath));
       const mediaItems = [];
       (data.images || []).forEach((img) => mediaItems.push({
-        type: 'archive', mime: 'image', path: relPath, entry: img.entry, name: img.name,
+        type: 'archive', mime: 'image', path: relPath, entry: img.entry, name: img.name, mtime: img.mtime,
       }));
       (data.videos || []).forEach((v) => mediaItems.push({
-        type: 'archive', mime: 'video', path: relPath, entry: v.entry, name: v.name,
+        type: 'archive', mime: 'video', path: relPath, entry: v.entry, name: v.name, mtime: v.mtime,
       }));
+      state.browseData = { mode: 'archive', folders: [], archives: [], images: mediaItems.filter(i => i.mime === 'image'), videos: mediaItems.filter(i => i.mime === 'video') };
       if (!mediaItems.length) {
         showEmpty('压缩包内没有图片或视频');
         return;
       }
-      renderMediaGrid(mediaItems);
+      renderBrowse();
     } catch (err) {
       showEmpty(err.message);
     }
