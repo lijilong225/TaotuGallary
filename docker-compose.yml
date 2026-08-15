@@ -1,6 +1,6 @@
 services:
   gallery:
-    build: .
+    image: ghcr.io/lijilong225/taotugallary:latest
     container_name: gallery-manager
     ports:
       - "${PORT:-8080}:8080"
