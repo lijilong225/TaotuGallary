@@ -53,9 +53,13 @@ async function init() {
   app.use(express.static(publicDir, {
     maxAge: '1h',
     etag: false,
+    index: false,
   }));
 
-  app.get('/', (req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+  app.get('/', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(publicDir, 'index.html'));
+  });
 
   // 404处理
   app.use((req, res) => {
