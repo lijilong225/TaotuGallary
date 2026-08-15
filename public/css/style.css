@@ -570,3 +570,51 @@ html, body {
 .lb-btn:hover { background: rgba(255,255,255,.35); }
 
 .lb-counter { color: #fff; font-size: 13px; min-width: 60px; text-align: center; }
+
+/* ---------- Modal ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.5);
+}
+
+.modal-box {
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
+  padding: 30px 36px;
+  width: 380px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.3);
+}
+
+.modal-box h2 {
+  font-size: 18px;
+  text-align: center;
+  margin-bottom: 24px;
+  color: var(--text);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.modal-actions .btn-ghost {
+  padding: 9px 18px;
+}
+
+.modal-submit {
+  width: auto;
+  padding: 9px 22px;
+}

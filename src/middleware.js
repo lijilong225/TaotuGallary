@@ -46,7 +46,7 @@ const apiLimiter = rateLimit({
 // CSRF保护 - 仅保护状态改变的请求
 const csrfProtection = csrf({
   cookie: false,
-  sessionKey: 'sessionID',
+  sessionKey: 'session',
 });
 
 // 错误处理中间件
