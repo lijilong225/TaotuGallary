@@ -75,10 +75,10 @@ async function listGalleryDir(userPath, pageNum = 1, pageSize = 50) {
   if (!(await isDirectory(dir))) throw new Error('not a directory');
 
   const entries = await fs.promises.readdir(dir);
-  const folders = [];
-  const archives = [];
-  const images = [];
-  const videos = [];
+  let folders = [];
+  let archives = [];
+  let images = [];
+  let videos = [];
 
   for (const name of entries) {
     if (isHiddenName(name)) continue;

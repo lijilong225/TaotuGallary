@@ -9,12 +9,16 @@ const { errorHandler, requestLogger, apiLimiter } = require('./middleware');
 const { execSync } = require('child_process');
 
 function checkBinary(cmd) {
-  try {
-    execSync(cmd + ' --version', { stdio: 'ignore', shell: true });
-    return true;
-  } catch {
-    return false;
+  const flags = ['-version', '--version', '-V'];
+  for (const flag of flags) {
+    try {
+      execSync(cmd + ' ' + flag, { stdio: 'ignore', shell: true });
+      return true;
+    } catch {
+      /* try next flag */
+    }
   }
+  return false;
 }
 
 const app = express();
