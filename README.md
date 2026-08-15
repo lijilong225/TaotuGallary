@@ -4,7 +4,7 @@
 
 ## 功能特性
 
-1. **Web 管理 + 登录认证**：默认管理员账号 `admin` / 密码 `admin`（首次启动写入 `data/users.json`，需强制修改）
+1. **Web 管理 + 登录认证**：管理员账号密码由环境变量 `ADMIN_USER` / `ADMIN_PASSWORD` 设置（默认 `admin` / `admin`）
 2. **映射目录管理**：通过环境变量指定根目录，每个子目录即一个套图集合，可包含多个子文件夹与压缩包
 3. **左侧目录树 + 右侧浏览区**：点击左侧目录，右侧展示其中套图与图片
 4. **压缩包浏览**：支持 `.zip`（adm-zip 纯 JS）与 `.rar`（libarchive `bsdtar`）
@@ -16,10 +16,8 @@
    - 缩略图智能缓存和自动失效
 8. **安全加固**：
    - 登录速率限制（15分钟内最多5次尝试）
-   - CSRF 保护（针对状态改变的请求）
    - 路径遍历防护
-   - Web 端修改密码（顶部「修改密码」按钮，首次使用默认密码登录后强制修改）   - 结构化日志记录（错误和审计日志）
-   - 首次启动强制修改默认密码
+   - 结构化日志记录（错误和审计日志）
 
 ## 快速开始（Docker Compose）
 
@@ -28,7 +26,7 @@
 mkdir -p /data/pictures
 
 # 2. 启动（默认 admin/admin，根目录 /data/pictures）
-GALLERY_DIR=/data/pictures docker compose up -d
+ADMIN_USER=admin ADMIN_PASSWORD=your-strong-password GALLERY_DIR=/data/pictures docker compose up -d
 
 # 3. 打开 http://localhost:8080
 ```
@@ -39,8 +37,8 @@ GALLERY_DIR=/data/pictures docker compose up -d
 |------|--------|------|
 | `PORT` | `8080` | 服务端口 |
 | `GALLERY_ROOT` | `/gallery` | 图片映射根目录 |
-| `ADMIN_USER` | `admin` | 默认管理员用户名 |
-| `ADMIN_PASSWORD` | `admin` | 默认管理员密码 |
+| `ADMIN_USER` | `admin` | 管理员用户名 |
+| `ADMIN_PASSWORD` | `admin` | 管理员密码 |
 | `SESSION_SECRET` | 随机生成 | 会话签名密钥 |
 | `THUMB_DIR` | `/app/data/thumbs` | 缩略图缓存目录 |
 
@@ -95,6 +93,6 @@ GALLERY_ROOT=./gallery PORT=8080 npm start
 
 ## 说明
 
-- 首次启动会根据 `ADMIN_USER`/`ADMIN_PASSWORD` 创建管理员账号并 bcrypt 加密存储于 `data/users.json`，后续修改环境变量不会覆盖已有账号
+- 管理员账号密码完全由环境变量 `ADMIN_USER` / `ADMIN_PASSWORD` 控制，修改后重启服务生效
 - rar 浏览依赖容器内的 `bsdtar`（libarchive），宿主机直接运行时需自行安装 `libarchive-tools`
 - 缩略图按 文件路径+大小+修改时间 生成缓存键，自动失效

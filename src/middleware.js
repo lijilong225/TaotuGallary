@@ -1,5 +1,4 @@
 const rateLimit = require('express-rate-limit');
-const csrf = require('csurf');
 const logger = require('./logger');
 
 // 登录端点速率限制 - 防止暴力破解
@@ -43,20 +42,8 @@ const apiLimiter = rateLimit({
   },
 });
 
-// CSRF保护 - 仅保护状态改变的请求
-const csrfProtection = csrf({
-  cookie: false,
-  sessionKey: 'session',
-});
-
 // 错误处理中间件
 const errorHandler = (err, req, res, next) => {
-  // CSRF错误
-  if (err.code === 'EBADCSRFTOKEN') {
-    logger.warn('CSRF令牌验证失败', { ip: req.ip, path: req.path, user: req.session?.user });
-    return res.status(403).json({ error: 'CSRF验证失败，请刷新页面重试' });
-  }
-
   // 路径遍历或安全错误
   if (err.message && err.message.includes('outside gallery root')) {
     logger.warn('尝试访问根目录外的文件', { ip: req.ip, path: req.path, user: req.session?.user, error: err.message });
@@ -113,7 +100,6 @@ const requestLogger = (req, res, next) => {
 module.exports = {
   loginLimiter,
   apiLimiter,
-  csrfProtection,
   errorHandler,
   requestLogger,
 };

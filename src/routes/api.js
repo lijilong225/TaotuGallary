@@ -3,12 +3,12 @@ const path = require('path');
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { config } = require('../config');
-const { verify, isDefaultPassword, changePassword } = require('../auth');
+const { verify } = require('../auth');
 const gallery = require('../gallery');
 const thumb = require('../thumbnail');
 const { mimeType, isImageFile, isArchiveFile, isVideoFile } = require('../utils');
 const logger = require('../logger');
-const { loginLimiter, csrfProtection } = require('../middleware');
+const { loginLimiter } = require('../middleware');
 
 const router = express.Router();
 
@@ -41,11 +41,6 @@ function sendRawImage(res, filePath, userPath) {
 
 router.get('/ping', (req, res) => res.json({ ok: true }));
 
-// 获取CSRF令牌
-router.get('/csrf-token', csrfProtection, (req, res) => {
-  res.json({ csrfToken: req.csrfToken() });
-});
-
 router.get('/me', (req, res) => {
   if (isAuth(req)) return res.json({ user: req.session.user });
   res.status(401).json({ error: '未登录' });
@@ -65,9 +60,8 @@ router.post('/login', [
     const ok = await verify(username, password);
     if (ok) {
       req.session.user = username;
-      const needsPasswordChange = await isDefaultPassword(username);
       logger.info('用户登录成功', { user: username });
-      return res.json({ user: username, needsPasswordChange });
+      return res.json({ user: username });
     }
     logger.warn('登录失败 - 凭证错误', { username });
     return res.status(401).json({ error: '用户名或密码错误' });
@@ -77,31 +71,7 @@ router.post('/login', [
   }
 });
 
-// 修改密码 - 需要CSRF保护
-router.post('/change-password', csrfProtection, [
-  body('oldPassword').notEmpty().withMessage('当前密码不能为空'),
-  body('newPassword').isLength({ min: 6 }).withMessage('新密码至少6个字符'),
-], requireAuth, async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ error: errors.array()[0].msg });
-  }
-
-  const { oldPassword, newPassword } = req.body;
-  const username = req.session.user;
-
-  try {
-    const result = await changePassword(username, oldPassword, newPassword);
-    if (result.success) {
-      logger.info('用户修改密码成功', { user: username });
-      return res.json({ success: true });
-    }
-    return res.status(400).json({ error: result.error });
-  } catch (e) {
-    logger.error('修改密码异常', { user: username, error: e.message });
-    return res.status(500).json({ error: '修改密码失败' });
-  }
-});
+// 修改密码端点已移除，账户密码由环境变量 ADMIN_USER / ADMIN_PASSWORD 设置
 
 router.post('/logout', (req, res) => {
   const user = req.session.user;

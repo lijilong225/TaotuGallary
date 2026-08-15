@@ -61,9 +61,6 @@
         body: JSON.stringify({ username, password }),
       });
       showMain(data.user);
-      if (data.needsPasswordChange) {
-        openPwdModal(true);
-      }
     } catch (err) {
       $('#login-error').textContent = err.message;
       $('#login-error').classList.remove('hidden');
@@ -74,75 +71,6 @@
     try { await api('/api/logout', { method: 'POST' }); } catch {}
     showLogin();
   });
-
-  /* ---------------- Change password ---------------- */
-  let pwdForced = false;
-
-  async function getCsrfToken() {
-    try {
-      const data = await api('/api/csrf-token');
-      return data.csrfToken || '';
-    } catch {
-      return '';
-    }
-  }
-
-  function openPwdModal(forced) {
-    pwdForced = !!forced;
-    $('#pwd-old').value = '';
-    $('#pwd-new').value = '';
-    $('#pwd-confirm').value = '';
-    $('#pwd-error').classList.add('hidden');
-    $('#pwd-modal').classList.remove('hidden');
-    $('#pwd-old').focus();
-  }
-
-  function closePwdModal() {
-    $('#pwd-modal').classList.add('hidden');
-    pwdForced = false;
-  }
-
-  $('#btn-change-password').addEventListener('click', () => openPwdModal(false));
-
-  $('#pwd-cancel').addEventListener('click', () => {
-    if (pwdForced) return;
-    closePwdModal();
-  });
-
-  $('#pwd-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const oldPassword = $('#pwd-old').value;
-    const newPassword = $('#pwd-new').value;
-    const confirm = $('#pwd-confirm').value;
-
-    if (newPassword.length < 6) {
-      return showPwdError('新密码至少6个字符');
-    }
-    if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
-      return showPwdError('新密码必须包含字母和数字');
-    }
-    if (newPassword !== confirm) {
-      return showPwdError('两次输入的新密码不一致');
-    }
-
-    try {
-      const csrfToken = await getCsrfToken();
-      await api('/api/change-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrfToken },
-        body: JSON.stringify({ oldPassword, newPassword }),
-      });
-      closePwdModal();
-      alert('密码修改成功');
-    } catch (err) {
-      showPwdError(err.message);
-    }
-  });
-
-  function showPwdError(msg) {
-    $('#pwd-error').textContent = msg;
-    $('#pwd-error').classList.remove('hidden');
-  }
 
   /* ---------------- Sorting ---------------- */
   $('#sort-by').addEventListener('change', (e) => {

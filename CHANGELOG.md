@@ -5,18 +5,14 @@
 ### 新增
 - **安全性加固**
   - 添加登录速率限制（15分钟内最多5次尝试）
-  - 添加 CSRF 保护（csurf 中间件）
   - 添加输入验证（express-validator）
-  - 首次启动强制修改默认密码功能
-  - 密码修改 API：`POST /api/change-password`
-  - CSRF 令牌端点：`GET /api/csrf-token`
   - 路径遍历防护加强
   
 - **错误处理和日志**
   - 添加结构化日志系统（winston）
   - 全局错误处理中间件
   - 请求日志记录（包含方法、路径、状态码、响应时间、用户等）
-  - 审计日志（登录、登出、密码修改）
+  - 审计日志（登录、登出）
   - 日志文件轮转（最大 5MB，保留 5 个文件）
   - 生产环境错误信息安全处理
   
@@ -39,26 +35,18 @@
 
 ### 改进
 - 日志系统从 console 升级为 winston 结构化日志
-- 密码存储改为用户对象格式，支持 `isDefault` 标记
+- 管理员认证改为直接读取环境变量 `ADMIN_USER` / `ADMIN_PASSWORD`
 - 错误处理更加健壮和信息安全
 - Session Cookie 安全配置增强（生产环境自动启用 secure 标志）
 
-### 依赖更新
-```json
-{
-  "csurf": "^1.11.0",
-  "express-rate-limit": "^7.1.5",
-  "express-validator": "^7.1.0",
-  "winston": "^3.11.0"
-}
-```
-
 ### 破坏性变更
-- 无。所有改进向后兼容。
+- 移除 Web 端密码修改功能及 `POST /api/change-password`、`GET /api/csrf-token` 端点
+- 移除密码文件存储（`data/users.json`），账号密码完全由环境变量控制
+- 移除依赖：`bcryptjs`、`csurf`
 
 ### 迁移说明
-1. 运行 `npm install` 安装新依赖
-2. 首次启动后用户会被提示修改默认密码
+1. 运行 `npm install` 更新依赖
+2. 通过环境变量 `ADMIN_USER` / `ADMIN_PASSWORD` 设置管理员账号，修改后重启服务生效
 3. 日志文件现在存储在 `data/logs/` 目录
 4. 建议在生产环境设置 `NODE_ENV=production`
 

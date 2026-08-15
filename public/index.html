@@ -30,7 +30,6 @@
       <div class="brand">套图管理器</div>
       <div class="topbar-right">
         <span id="current-user" class="user"></span>
-        <button id="btn-change-password" class="btn-ghost">修改密码</button>
         <button id="btn-logout" class="btn-ghost">退出登录</button>
       </div>
     </header>
@@ -86,32 +85,6 @@
           <button id="vc-close" class="vc-btn" title="关闭">&#10005;</button>
         </div>
       </div>
-    </div>
-  </div>
-
-  <div id="pwd-modal" class="modal hidden">
-    <div class="modal-mask"></div>
-    <div class="modal-box">
-      <h2>修改密码</h2>
-      <form id="pwd-form">
-        <div class="field">
-          <label>当前密码</label>
-          <input type="password" id="pwd-old" autocomplete="current-password" required>
-        </div>
-        <div class="field">
-          <label>新密码</label>
-          <input type="password" id="pwd-new" autocomplete="new-password" required>
-        </div>
-        <div class="field">
-          <label>确认新密码</label>
-          <input type="password" id="pwd-confirm" autocomplete="new-password" required>
-        </div>
-        <div id="pwd-error" class="error hidden"></div>
-        <div class="modal-actions">
-          <button type="button" id="pwd-cancel" class="btn-ghost">取消</button>
-          <button type="submit" class="btn-primary modal-submit">确认修改</button>
-        </div>
-      </form>
     </div>
   </div>
 

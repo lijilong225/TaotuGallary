@@ -32,7 +32,8 @@ Entries discovered by the Agent during task execution should follow this format:
 ## Entries
 
 [User Instruction Summary]
-- Date: 2026-08-14
-- Context: 套图管理器项目开发中，用户要求每次代码修改完成后自动提交 git
+- Date: 2026-08-15
+- Context: 套图管理器项目开发中，用户要求代码修改后同步提交到 GitHub
 - Instructions:
-  - 每次完成代码修改后，自动执行 git add + git commit（无需用户手动要求）
+  - 每次完成代码修改后，自动执行 git add + git commit + git push，同步提交到远程 GitHub 仓库（无需用户手动要求）
+  - 用户明确要求暂不提交时，保持改动为未提交状态

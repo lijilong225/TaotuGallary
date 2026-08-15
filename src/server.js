@@ -2,7 +2,6 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const { config, ROOT_DIR } = require('./config');
-const { ensureDefaultUser } = require('./auth');
 const api = require('./routes/api');
 const logger = require('./logger');
 const { errorHandler, requestLogger, apiLimiter } = require('./middleware');
@@ -24,12 +23,6 @@ function checkBinary(cmd) {
 const app = express();
 
 async function init() {
-  try {
-    await require('./auth').ensureDefaultUser();
-  } catch (e) {
-    logger.error('初始化默认用户失败', { error: e.message });
-  }
-
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
 
