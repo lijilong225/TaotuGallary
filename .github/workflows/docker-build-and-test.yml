@@ -1,7 +1,7 @@
 name: Docker Build and Test
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 on:
@@ -19,10 +19,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Set lowercase image name
         run: |
           echo "IMAGE_NAME_LOWER=${IMAGE_NAME,,}" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Determine next image version
+        id: version
+        run: |
+          LATEST=$(git tag -l 'v[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 || true)
+          if [ -z "$LATEST" ]; then
+            NEXT="0.0.1"
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
+            PATCH=$((PATCH + 1))
+            NEXT="$MAJOR.$MINOR.$PATCH"
+          fi
+          echo "IMAGE_TAG=$NEXT" >> "$GITHUB_ENV"
+          echo "IMAGE_VERSION=v$NEXT" >> "$GITHUB_ENV"
+          echo "Next image version: $NEXT"
         shell: bash
 
       - name: Set up QEMU
@@ -78,5 +97,11 @@ jobs:
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}:ci
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}:${{ env.IMAGE_TAG }}
           build-args: |
             BUILDKIT_INLINE_CACHE=1
+
+      - name: Push version tag
+        run: |
+          git tag ${{ env.IMAGE_VERSION }}
+          git push origin ${{ env.IMAGE_VERSION }}
