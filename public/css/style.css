@@ -521,7 +521,7 @@ html, body {
 
 .lightbox-toolbar {
   position: absolute;
-  top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
   display: flex;
@@ -532,6 +532,10 @@ html, body {
   background: rgba(0,0,0,.5);
   z-index: 10;
   pointer-events: none;
+}
+
+#lightbox:fullscreen .lightbox-toolbar {
+  display: none;
 }
 
 .lightbox-toolbar .lb-btn,
@@ -558,7 +562,7 @@ html, body {
   position: absolute;
   top: 0;
   right: 0;
-  bottom: 0;
+  bottom: 68px;
   width: 280px;
   background: #fff;
   border-left: 1px solid var(--border);
