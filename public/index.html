@@ -68,6 +68,7 @@
       <button id="lb-prev" class="lb-btn" title="上一个">&#10094;</button>
       <span id="lb-counter" class="lb-counter"></span>
       <button id="lb-next" class="lb-btn" title="下一个">&#10095;</button>
+      <button id="lb-info-toggle" class="lb-btn" title="详情">&#8505;</button>
       <button id="lb-close" class="lb-btn" title="关闭">&#10005;</button>
     </div>
     <div class="lightbox-stage">
@@ -84,6 +85,14 @@
           <button id="vc-fullscreen" class="vc-btn" title="浏览器全屏">&#9974;</button>
           <button id="vc-close" class="vc-btn" title="关闭">&#10005;</button>
         </div>
+      </div>
+    </div>
+    <div id="lb-info-panel" class="lb-info-panel hidden">
+      <div class="lb-info-title">图片信息</div>
+      <div id="lb-info-body" class="lb-info-body">
+        <div id="lb-info-loading" class="lb-info-loading hidden">加载中...</div>
+        <div id="lb-info-error" class="lb-info-error hidden"></div>
+        <div id="lb-info-fields" class="lb-info-fields"></div>
       </div>
     </div>
   </div>

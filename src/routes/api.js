@@ -87,6 +87,17 @@ router.get('/tree', requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+router.get('/info', requireAuth, async (req, res, next) => {
+  try {
+    const info = await gallery.getMediaInfo(req.query.path || '', req.query.entry);
+    res.json(info);
+  } catch (e) {
+    if (e.message === 'file not found') return res.status(404).json({ error: '文件不存在' });
+    if (e.message === 'invalid path' || e.message === 'path outside gallery root') return res.status(403).json({ error: '访问被拒绝' });
+    next(e);
+  }
+});
+
 router.get('/browse', requireAuth, async (req, res, next) => {
   try {
     const p = req.query.path || '';

@@ -421,6 +421,7 @@
     state.lbIndex = index;
     $('#lightbox').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
+    hideInfoPanel();
     updateLightbox();
   }
 
@@ -429,6 +430,7 @@
     $('#lightbox').classList.add('hidden');
     $('#lb-img').src = '';
     document.body.style.overflow = '';
+    hideInfoPanel();
   }
 
   function updateLightbox() {
@@ -450,6 +452,7 @@
       $('#lb-img').classList.remove('hidden');
       $('#lb-img').src = rawUrl(item);
     }
+    if (!isInfoPanelHidden()) renderInfoPanel();
   }
 
   function stopVideo() {
@@ -475,6 +478,98 @@
     $('#vc-time').textContent = '0:00 / 0:00';
   }
 
+  /* ---------------- Info panel ---------------- */
+  function isInfoPanelHidden() {
+    return $('#lb-info-panel').classList.contains('hidden');
+  }
+
+  function hideInfoPanel() {
+    $('#lb-info-panel').classList.add('hidden');
+  }
+
+  function showInfoPanel() {
+    $('#lb-info-panel').classList.remove('hidden');
+    renderInfoPanel();
+  }
+
+  function toggleInfoPanel() {
+    if (isInfoPanelHidden()) showInfoPanel();
+    else hideInfoPanel();
+  }
+
+  async function renderInfoPanel() {
+    const item = state.imageList[state.lbIndex];
+    if (!item) return;
+    $('#lb-info-loading').classList.remove('hidden');
+    $('#lb-info-error').classList.add('hidden');
+    $('#lb-info-fields').classList.add('hidden');
+    $('#lb-info-fields').innerHTML = '';
+    try {
+      let q = 'path=' + encodeURIComponent(item.path);
+      if (item.entry) q += '&entry=' + encodeURIComponent(item.entry);
+      const info = await api('/api/info?' + q);
+      renderInfoFields(info, item);
+    } catch (err) {
+      $('#lb-info-loading').classList.add('hidden');
+      $('#lb-info-error').textContent = err.message;
+      $('#lb-info-error').classList.remove('hidden');
+    }
+  }
+
+  function infoRow(label, value) {
+    const row = document.createElement('div');
+    row.className = 'info-row';
+    const l = document.createElement('span');
+    l.className = 'info-label';
+    l.textContent = label;
+    const v = document.createElement('span');
+    v.className = 'info-value';
+    v.textContent = value;
+    row.appendChild(l);
+    row.appendChild(v);
+    return row;
+  }
+
+  function renderInfoFields(info, item) {
+    const fields = $('#lb-info-fields');
+    fields.innerHTML = '';
+
+    const typeText = info.type === 'video' ? '视频' : '图片';
+    let pathText = info.path || '-';
+    if (info.location === 'archive' && info.archiveName) {
+      pathText = info.archiveName + ' / ' + info.entry;
+    }
+
+    fields.appendChild(infoRow('文件名', info.name || '-'));
+    fields.appendChild(infoRow('路径', pathText));
+    fields.appendChild(infoRow('类型', typeText));
+    fields.appendChild(infoRow('大小', info.sizeText || '-'));
+
+    if (info.type === 'image') {
+      let dim = '-';
+      if (info.width && info.height) dim = `${info.width} x ${info.height}`;
+      fields.appendChild(infoRow('尺寸', dim));
+    } else if (info.type === 'video') {
+      const videoEl = $('#lb-video');
+      const dur = isFinite(videoEl.duration) && videoEl.duration > 0 ? fmtTime(videoEl.duration) : null;
+      if (dur) {
+        fields.appendChild(infoRow('时长', dur));
+      } else {
+        fields.appendChild(infoRow('时长', '加载中...'));
+        const onMeta = () => {
+          videoEl.removeEventListener('loadedmetadata', onMeta);
+          if (!isInfoPanelHidden() && state.imageList[state.lbIndex] === item) renderInfoFields(info, item);
+        };
+        videoEl.addEventListener('loadedmetadata', onMeta);
+      }
+    }
+
+    fields.appendChild(infoRow('修改时间', info.mtimeText || '-'));
+
+    $('#lb-info-loading').classList.add('hidden');
+    fields.classList.remove('hidden');
+  }
+
   function nextImage() {
     if (!state.imageList.length) return;
     state.lbIndex = (state.lbIndex + 1) % state.imageList.length;
@@ -490,6 +585,7 @@
   $('#lb-close').addEventListener('click', closeLightbox);
   $('#lb-next').addEventListener('click', nextImage);
   $('#lb-prev').addEventListener('click', prevImage);
+  $('#lb-info-toggle').addEventListener('click', toggleInfoPanel);
 
   /* ---------------- Video controls ---------------- */
   const video = $('#lb-video');

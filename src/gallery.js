@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const { config } = require('./config');
-const { isImageFile, isArchiveFile, isHiddenName, isVideoFile } = require('./utils');
-const { listEntries } = require('./archive');
+const { isImageFile, isArchiveFile, isHiddenName, isVideoFile, normalizeArchiveEntry } = require('./utils');
+const { listEntries, readEntryBuffer } = require('./archive');
 
 function toRel(p) {
   const rel = path.relative(config.galleryRoot, p);
@@ -147,6 +148,88 @@ async function countChildImages(dir) {
   return count;
 }
 
+function formatSize(bytes) {
+  if (bytes == null || isNaN(bytes) || bytes < 0) return '-';
+  if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  return (bytes / 1024).toFixed(1) + ' KB';
+}
+
+function formatTime(ms) {
+  if (!ms) return '-';
+  const d = new Date(ms);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+async function imageDimensionsFromFile(filePath) {
+  try {
+    const meta = await sharp(filePath, { failOn: 'none' }).metadata();
+    return { width: meta.width, height: meta.height };
+  } catch {
+    return {};
+  }
+}
+
+async function imageDimensionsFromBuffer(buf) {
+  try {
+    const meta = await sharp(buf, { failOn: 'none' }).metadata();
+    return { width: meta.width, height: meta.height };
+  } catch {
+    return {};
+  }
+}
+
+function mediaType(name) {
+  if (isVideoFile(name)) return 'video';
+  if (isImageFile(name)) return 'image';
+  return 'file';
+}
+
+async function getMediaInfo(userPath, entryName) {
+  const full = safeResolve(userPath);
+  if (!exists(full)) throw new Error('file not found');
+
+  if (entryName) {
+    const entry = normalizeArchiveEntry(entryName);
+    const entries = await listEntries(full, full);
+    const target = entries.find(e => normalizeArchiveEntry(e.name) === entry && !e.isDirectory);
+    if (!target) throw new Error('file not found');
+    const info = {
+      name: path.basename(entry),
+      path: userPath,
+      entry,
+      location: 'archive',
+      archiveName: path.basename(full),
+      type: mediaType(entry),
+      sizeBytes: target.size != null ? target.size : null,
+      sizeText: formatSize(target.size),
+      mtime: target.mtime,
+      mtimeText: formatTime(target.mtime),
+    };
+    if (info.type === 'image') {
+      const buf = await readEntryBuffer(full, full, entry);
+      Object.assign(info, await imageDimensionsFromBuffer(buf));
+    }
+    return info;
+  }
+
+  const stat = await fs.promises.stat(full);
+  const info = {
+    name: path.basename(full),
+    path: userPath,
+    location: 'filesystem',
+    type: mediaType(full),
+    sizeBytes: stat.size,
+    sizeText: formatSize(stat.size),
+    mtime: stat.mtimeMs,
+    mtimeText: formatTime(stat.mtimeMs),
+  };
+  if (info.type === 'image') {
+    Object.assign(info, await imageDimensionsFromFile(full));
+  }
+  return info;
+}
+
 async function listArchiveMedia(archiveRel) {
   const full = safeResolve(archiveRel);
   if (!exists(full)) throw new Error('archive not found');
@@ -161,4 +244,4 @@ async function listArchiveMedia(archiveRel) {
   return { images, videos };
 }
 
-module.exports = { buildTree, listGalleryDir, listArchiveMedia, safeResolve, toRel, exists, isDirectory };
+module.exports = { buildTree, listGalleryDir, listArchiveMedia, getMediaInfo, safeResolve, toRel, exists, isDirectory };

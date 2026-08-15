@@ -553,6 +553,68 @@ html, body {
 
 .lb-counter { color: #fff; font-size: 13px; min-width: 60px; text-align: center; }
 
+/* ---------- Lightbox info panel ---------- */
+.lb-info-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 280px;
+  background: #fff;
+  border-left: 1px solid var(--border);
+  z-index: 20;
+  overflow-y: auto;
+  padding: 18px 16px;
+}
+
+.lb-info-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+
+.lb-info-loading {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.lb-info-error {
+  color: #dc2626;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.lb-info-fields {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.info-row:last-child { border-bottom: none; }
+
+.info-label {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: var(--text);
+  word-break: break-all;
+  text-align: right;
+}
+
 /* ---------- Modal ---------- */
 .modal {
   position: fixed;
