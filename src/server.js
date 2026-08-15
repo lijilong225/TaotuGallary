@@ -39,7 +39,7 @@ async function init() {
     cookie: {
       httpOnly: true,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production', // 生产环境使用https
+      secure: 'auto', // 根据请求协议自动决定：HTTPS 时启用，HTTP 时禁用
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
   }));
