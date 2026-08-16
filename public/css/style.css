@@ -39,7 +39,10 @@ html, body {
 }
 
 body {
-  background: #ffffff;
+  background:
+    repeating-linear-gradient(90deg, rgba(80,55,15,.045) 0 2px, transparent 2px 36px),
+    repeating-linear-gradient(0deg, rgba(80,55,15,.035) 0 3px, transparent 3px 52px),
+    linear-gradient(160deg, var(--wood-light) 0%, var(--wood-mid) 58%, var(--wood-dark) 100%);
   background-attachment: fixed;
 }
 
