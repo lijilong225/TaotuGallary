@@ -4,7 +4,7 @@ const logger = require('./logger');
 // 登录端点速率限制 - 防止暴力破解
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15分钟
-  max: 5, // 每IP最多5次尝试
+  max: parseInt(process.env.LOGIN_RATE_LIMIT_MAX, 10) || 30, // 每IP 15分钟最多30次尝试
   message: '登录尝试过多，请15分钟后再试',
   standardHeaders: true,
   legacyHeaders: false,
@@ -24,7 +24,7 @@ const loginLimiter = rateLimit({
 // API通用速率限制
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1分钟
-  max: 100, // 每IP每分钟最多100次请求
+  max: parseInt(process.env.API_RATE_LIMIT_MAX, 10) || 600, // 每IP每分钟最多600次请求
   message: '请求过于频繁',
   standardHeaders: true,
   legacyHeaders: false,
