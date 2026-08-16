@@ -4,6 +4,17 @@
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+  function icon(name) {
+    return window.ICONPARK && ICONPARK[name] ? ICONPARK[name] : '';
+  }
+
+  function initIcons() {
+    $$('[data-icon]').forEach(el => {
+      const name = el.dataset.icon;
+      el.innerHTML = icon(name);
+    });
+  }
+
   const LAYOUT_SIZES = { s: 160, m: 240, l: 320 };
   const MASONRY_GAP = 18;
 
@@ -76,13 +87,13 @@
   function updateFavUI(el, key) {
     if (el) {
       const on = isFavored(key);
-      el.innerHTML = on ? '&#9829;' : '&#9825;';
+      el.innerHTML = icon('heart');
       el.classList.toggle('fav-on', on);
     }
     $$('#image-grid .fav-btn').forEach(btn => {
       const k = btn.dataset.favKey;
       const on = isFavored(k);
-      btn.innerHTML = on ? '&#9829;' : '&#9825;';
+      btn.innerHTML = icon('heart');
       btn.classList.toggle('fav-on', on);
     });
     updateLightboxFav();
@@ -201,13 +212,13 @@ function applyThumbSize() {
 
     const toggle = document.createElement('span');
     toggle.className = 'tree-toggle';
-    toggle.textContent = '▶';
+    toggle.innerHTML = icon('treeExpand');
     item.appendChild(toggle);
 
-    const icon = document.createElement('span');
-    icon.className = 'tree-icon';
-    icon.textContent = node.type === 'archive' ? '🗜️' : '📁';
-    item.appendChild(icon);
+    const iconEl = document.createElement('span');
+    iconEl.className = 'tree-icon';
+    iconEl.innerHTML = icon(node.type === 'archive' ? 'archive' : 'folder');
+    item.appendChild(iconEl);
 
     const label = document.createElement('span');
     label.className = 'tree-label';
@@ -220,7 +231,7 @@ function applyThumbSize() {
       e.stopPropagation();
       if (node.type === 'dir' && node.children && node.children.length) {
         wrapper.classList.toggle('open');
-        toggle.textContent = wrapper.classList.contains('open') ? '▼' : '▶';
+        toggle.innerHTML = wrapper.classList.contains('open') ? icon('treeCollapse') : icon('treeExpand');
       }
       selectNode(node);
     });
@@ -353,14 +364,15 @@ function applyThumbSize() {
     const mkBtn = (label, page, cls, disabled) => {
       const btn = document.createElement('button');
       btn.className = 'page-btn' + (cls ? ' ' + cls : '');
-      btn.textContent = label;
+      if (typeof label === 'string' && '<' === label[0]) btn.innerHTML = label;
+      else btn.textContent = label;
       btn.disabled = !!disabled;
       btn.addEventListener('click', () => openDirectory(state.currentPath, page));
       return btn;
     };
 
-    pag.appendChild(mkBtn('«', 1, 'page-first', state.pageNum === 1));
-    pag.appendChild(mkBtn('‹', state.pageNum - 1, 'page-prev', state.pageNum === 1));
+    pag.appendChild(mkBtn(icon('first'), 1, 'page-first', state.pageNum === 1));
+    pag.appendChild(mkBtn(icon('prev'), state.pageNum - 1, 'page-prev', state.pageNum === 1));
 
     const total = state.totalPages;
     const cur = state.pageNum;
@@ -370,8 +382,8 @@ function applyThumbSize() {
       pag.appendChild(mkBtn(String(p), p, p === cur ? 'page-cur' : '', p === cur));
     }
 
-    pag.appendChild(mkBtn('›', state.pageNum + 1, 'page-next', state.pageNum === total));
-    pag.appendChild(mkBtn('»', total, 'page-last', state.pageNum === total));
+    pag.appendChild(mkBtn(icon('next'), state.pageNum + 1, 'page-next', state.pageNum === total));
+    pag.appendChild(mkBtn(icon('last'), total, 'page-last', state.pageNum === total));
   }
 
   function clearArea() {
@@ -427,7 +439,7 @@ function applyThumbSize() {
       card.className = 'folder-card' + (item.type === 'archive' ? ' archive-card' : '');
       const isArchive = item.type === 'archive';
       card.innerHTML = `
-        <div class="icon">${isArchive ? '🗜️' : '📂'}</div>
+        <div class="icon">${isArchive ? icon('archive') : icon('folder')}</div>
         <div class="name"></div>
         <div class="count">${isArchive ? '压缩包' : (item.count !== undefined ? item.count + ' 张图片' : '')}</div>
       `;
@@ -621,10 +633,9 @@ function applyThumbSize() {
     const fav = document.createElement('button');
     fav.className = 'fav-btn';
     fav.title = '收藏';
-    fav.innerHTML = '&#9825;';
+    fav.innerHTML = icon('heart');
     fav.dataset.favKey = favKey(item);
     if (isFavored(fav.dataset.favKey)) {
-      fav.innerHTML = '&#9829;';
       fav.classList.add('fav-on');
     }
     fav.addEventListener('click', (e) => {
@@ -636,7 +647,7 @@ function applyThumbSize() {
     if (item.mime === 'video') {
       const badge = document.createElement('div');
       badge.className = 'video-badge';
-      badge.innerHTML = '&#9658;';
+      badge.innerHTML = icon('videoBadge');
       box.appendChild(badge);
       box.classList.add('video-box');
     }
@@ -730,7 +741,7 @@ function applyThumbSize() {
     if (!item) return;
     const key = favKey(item);
     const on = isFavored(key);
-    btn.innerHTML = on ? '&#9829;' : '&#9825;';
+    btn.innerHTML = icon('heart');
     btn.classList.toggle('fav-on', on);
   }
 
@@ -888,7 +899,7 @@ function applyThumbSize() {
     lbImg.style.height = '';
     lbImg.style.transform = '';
     $('#lb-zoom-toggle').title = '放大到原始大小';
-    $('#lb-zoom-ico').textContent = '+';
+    $('#lb-zoom-ico').innerHTML = icon('zoomIn');
     navEl.classList.add('hidden');
   }
 
@@ -978,7 +989,7 @@ function applyThumbSize() {
       state.zoomX = (stage.clientWidth - natW) / 2;
       state.zoomY = (stage.clientHeight - natH) / 2;
       $('#lb-zoom-toggle').title = '缩放适配屏幕';
-      $('#lb-zoom-ico').textContent = '−';
+      $('#lb-zoom-ico').innerHTML = icon('zoomOut');
       $('#lb-nav-img').src = lbImg.src;
       navEl.classList.remove('hidden');
       clampZoom();
@@ -1096,8 +1107,8 @@ function applyThumbSize() {
     else video.pause();
   });
 
-  video.addEventListener('play', () => { $('#vc-play').innerHTML = '&#10074;&#10074;'; syncVideoControls(); });
-  video.addEventListener('pause', () => { $('#vc-play').innerHTML = '&#9658;'; syncVideoControls(); });
+  video.addEventListener('play', () => { $('#vc-play').innerHTML = icon('pause'); syncVideoControls(); });
+  video.addEventListener('pause', () => { $('#vc-play').innerHTML = icon('play'); syncVideoControls(); });
 
   video.addEventListener('timeupdate', () => {
     if (!video.duration) return;
@@ -1118,12 +1129,12 @@ function applyThumbSize() {
     const v = parseInt($('#vc-volume').value, 10) / 100;
     video.volume = v;
     video.muted = v === 0;
-    $('#vc-mute').innerHTML = v === 0 ? '&#128263;' : '&#128266;';
+    $('#vc-mute').innerHTML = v === 0 ? icon('volumeMute') : icon('volume');
   });
 
   $('#vc-mute').addEventListener('click', () => {
     video.muted = !video.muted;
-    $('#vc-mute').innerHTML = video.muted ? '&#128263;' : '&#128266;';
+    $('#vc-mute').innerHTML = video.muted ? icon('volumeMute') : icon('volume');
   });
 
   $('#vc-pip').addEventListener('click', async () => {
@@ -1179,6 +1190,7 @@ function applyThumbSize() {
   });
 
   /* ---------------- Init ---------------- */
+  initIcons();
   (async () => {
     try {
       const data = await api('/api/me');

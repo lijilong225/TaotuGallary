@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/css/style.css?v=20260816p">
+  <link rel="stylesheet" href="/css/style.css?v=20260816q">
+  <script src="/js/icons.js?v=20260816q"></script>
 </head>
 <body>
   <div id="login-view" class="login-view hidden">
@@ -80,25 +81,25 @@
       <div id="lb-video-wrap" class="video-wrap hidden">
         <video id="lb-video" playsinline></video>
         <div class="video-controls">
-          <button id="vc-play" class="vc-btn" title="播放/暂停">&#10074;&#10074;</button>
+          <button id="vc-play" class="vc-btn" title="播放/暂停" data-icon="play"></button>
           <input type="range" id="vc-progress" min="0" max="1000" value="0" step="1" title="进度">
           <span id="vc-time" class="vc-time">0:00 / 0:00</span>
-          <button id="vc-mute" class="vc-btn" title="静音">&#128266;</button>
+          <button id="vc-mute" class="vc-btn" title="静音" data-icon="volume"></button>
           <input type="range" id="vc-volume" min="0" max="100" value="100" step="1" title="音量">
-          <button id="vc-pip" class="vc-btn" title="小窗画中画">&#10697;</button>
-          <button id="vc-fullscreen" class="vc-btn" title="浏览器全屏">&#9974;</button>
-          <button id="vc-close" class="vc-btn" title="关闭">&#10005;</button>
+          <button id="vc-pip" class="vc-btn" title="小窗画中画" data-icon="fullScreen"></button>
+          <button id="vc-fullscreen" class="vc-btn" title="浏览器全屏" data-icon="fullScreen"></button>
+          <button id="vc-close" class="vc-btn" title="关闭" data-icon="closeSmall"></button>
         </div>
       </div>
     </div>
-    <button id="lb-close" class="lb-corner-btn lb-close" title="返回">&#8592;</button>
+    <button id="lb-close" class="lb-corner-btn lb-close" title="返回" data-icon="back"></button>
     <span id="lb-counter" class="lb-counter"></span>
-    <button id="lb-zoom-toggle" class="lb-corner-btn lb-zoom-toggle" title="放大到原始大小"><span id="lb-zoom-ico">+</span></button>
-    <button id="lb-fav" class="lb-corner-btn lb-fav" title="收藏">&#9825;</button>
-    <button id="lb-download" class="lb-corner-btn lb-download" title="下载原图">&#8681;</button>
-    <button id="lb-info-toggle" class="lb-corner-btn lb-info-toggle" title="详情">&#8505;</button>
-    <button id="lb-prev" class="lb-nav" title="上一个">&#10094;</button>
-    <button id="lb-next" class="lb-nav" title="下一个">&#10095;</button>
+    <button id="lb-zoom-toggle" class="lb-corner-btn lb-zoom-toggle" title="放大到原始大小"><span id="lb-zoom-ico" data-icon="zoomIn"></span></button>
+    <button id="lb-fav" class="lb-corner-btn lb-fav" title="收藏" data-icon="heart"></button>
+    <button id="lb-download" class="lb-corner-btn lb-download" title="下载原图" data-icon="download"></button>
+    <button id="lb-info-toggle" class="lb-corner-btn lb-info-toggle" title="详情" data-icon="info"></button>
+    <button id="lb-prev" class="lb-nav" title="上一个" data-icon="prev"></button>
+    <button id="lb-next" class="lb-nav" title="下一个" data-icon="next"></button>
     <div id="lb-navigator" class="lb-navigator hidden">
       <img id="lb-nav-img" alt="">
       <div id="lb-nav-viewport" class="lb-nav-viewport"></div>
@@ -113,6 +114,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20260816p"></script>
+  <script src="/js/app.js?v=20260816q"></script>
 </body>
 </html>
