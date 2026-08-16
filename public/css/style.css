@@ -564,6 +564,7 @@ body {
    ========================================================= */
 .image-grid {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 18px;
 }
@@ -574,15 +575,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 18px;
-}
-
-.image-grid .thumb-box {
-  aspect-ratio: auto;
-}
-
-.image-grid .thumb-box img {
-  height: auto;
-  object-fit: cover;
 }
 
 /* ---------- 时间轴 ---------- */
@@ -652,15 +644,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 18px;
-}
-
-.timeline-row .thumb-box {
-  aspect-ratio: auto;
-}
-
-.timeline-row .thumb-box img {
-  height: auto;
-  object-fit: cover;
 }
 
 .thumb-box {
