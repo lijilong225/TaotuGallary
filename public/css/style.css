@@ -563,7 +563,7 @@ body {
    ========================================================= */
 .image-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 18px;
 }
 
@@ -572,11 +572,11 @@ body {
 }
 
 .image-grid[data-size="m"] {
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 
 .image-grid[data-size="l"] {
-  grid-template-columns: repeat(auto-fill, minmax(640px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 
 .thumb-box {

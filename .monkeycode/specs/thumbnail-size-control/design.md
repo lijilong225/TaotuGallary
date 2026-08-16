@@ -5,7 +5,7 @@ Updated: 2026-08-16
 
 ## Description
 
-浏览区图片宫格支持小、中、大三档缩略图尺寸，中尺寸比小尺寸宽 100%（160→320px），大尺寸比中尺寸再宽 100%（320→640px）。默认中尺寸。切换控件为顶栏右上角三个并排按钮（小/中/大），当前尺寸高亮。大尺寸下通过后端生成对应宽度的缩略图，避免放大模糊。
+浏览区图片宫格支持小、中、大三档缩略图尺寸：小 160px、中 240px、大 320px。默认中尺寸。切换控件为顶栏右上角三个并排按钮（小/中/大），当前尺寸高亮。各尺寸下通过后端生成对应宽度的缩略图，避免放大模糊。
 
 ## Architecture
 
@@ -60,8 +60,8 @@ graph TD
 
 ```css
 .image-grid[data-size="s"] { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-.image-grid[data-size="m"] { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
-.image-grid[data-size="l"] { grid-template-columns: repeat(auto-fill, minmax(640px, 1fr)); }
+.image-grid[data-size="m"] { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.image-grid[data-size="l"] { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 ```
 
 ### 后端 `src/thumbnail.js`
@@ -72,7 +72,7 @@ graph TD
 
 ### 后端 `src/routes/api.js`
 
-- `/thumb` 路由解析 `size` 查询参数，映射表：`s→160`、`m→320`、`l→640`
+- `/thumb` 路由解析 `size` 查询参数，映射表：`s→160`、`m→240`、`l→320`
 - 未传 `size` 时沿用现有 `config.thumbSize`（默认 320），保持向后兼容
 - 非法 `size` 值忽略并回退默认值
 
@@ -82,18 +82,18 @@ graph TD
 
 | 标识 | 显示宽度 | 说明 |
 |------|---------|------|
-| `s`  | 160px   | 小尺寸（当前默认值） |
-| `m`  | 320px   | 中尺寸，小+100% |
-| `l`  | 640px   | 大尺寸，中+100% |
+| `s`  | 160px   | 小尺寸 |
+| `m`  | 240px   | 中尺寸（默认） |
+| `l`  | 320px   | 大尺寸 |
 
 缩略图缓存键：`cacheKey('file', filePath, size, mtime, width)` / `cacheKey('archive', archivePath, size, mtime, entryName, width)`。
 
 ## Correctness Properties
 
-- 首次登录默认 `thumbSize = 'm'`，宫格以 320px 最小列宽渲染
+- 首次登录默认 `thumbSize = 'm'`，宫格以 240px 最小列宽渲染
 - 切换尺寸时目录、分页、排序状态保持不变，仅重绘图片宫格
 - 三个按钮有且仅有一个处于高亮态
-- 大/中/小尺寸分别请求宽度不低于 640/320/160 的缩略图
+- 大/中/小尺寸分别请求宽度不低于 320/240/160 的缩略图
 - 后端 `size` 参数非法时回退默认宽度，不产生错误响应
 
 ## Error Handling
@@ -106,10 +106,10 @@ graph TD
 
 - 手工脚本验证：`node test.js` 确认现有功能无回归
 - 启动服务后验证：
-  1. 默认进入浏览区宫格列宽为中尺寸（320px）
+  1. 默认进入浏览区宫格列宽为中尺寸（240px）
   2. 依次点击小/中/大按钮，宫格列宽即时变化且当前按钮高亮
   3. 切换尺寸后目录、分页、排序保持不变
-  4. 抓取 `/api/thumb?size=l` 返回图片宽度不小于 640px
+  4. 抓取 `/api/thumb?size=l` 返回图片宽度不小于 320px
   5. 刷新页面后重新登录，仍默认中尺寸
 
 ## References

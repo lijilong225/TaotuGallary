@@ -12,7 +12,7 @@ const { loginLimiter } = require('../middleware');
 
 const router = express.Router();
 
-const THUMB_SIZES = { s: 160, m: 320, l: 640 };
+const THUMB_SIZES = { s: 160, m: 240, l: 320 };
 
 // 应用登录速率限制到整个路由
 router.use(loginLimiter);
