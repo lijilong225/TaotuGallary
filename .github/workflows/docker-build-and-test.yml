@@ -27,11 +27,20 @@ jobs:
           echo "IMAGE_NAME_LOWER=${IMAGE_NAME,,}" >> $GITHUB_ENV
         shell: bash
 
-      - name: Set image version
+      - name: Determine next image version
         id: version
         run: |
-          echo "IMAGE_TAG=1.0.0" >> "$GITHUB_ENV"
-          echo "IMAGE_VERSION=v1.0.0" >> "$GITHUB_ENV"
+          LATEST=$(git tag -l 'v[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n1 || true)
+          if [ -z "$LATEST" ]; then
+            NEXT="1.0.0"
+          else
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
+            PATCH=$((PATCH + 1))
+            NEXT="$MAJOR.$MINOR.$PATCH"
+          fi
+          echo "IMAGE_TAG=$NEXT" >> "$GITHUB_ENV"
+          echo "IMAGE_VERSION=v$NEXT" >> "$GITHUB_ENV"
+          echo "Next image version: $NEXT"
         shell: bash
 
       - name: Set up QEMU
