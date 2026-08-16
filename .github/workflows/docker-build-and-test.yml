@@ -7,7 +7,6 @@ permissions:
 on:
   workflow_dispatch: {}
   push:
-    branches: [ main ]
 
 jobs:
   build-and-test:
@@ -84,6 +83,7 @@ jobs:
           docker stop gallery-manager-test || true
 
       - name: Login to GitHub Container Registry
+        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -91,6 +91,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push image to GHCR
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v6
         with:
           push: true
@@ -102,6 +103,7 @@ jobs:
             BUILDKIT_INLINE_CACHE=1
 
       - name: Push version tag
+        if: github.ref == 'refs/heads/main'
         run: |
           git tag ${{ env.IMAGE_VERSION }}
           git push origin ${{ env.IMAGE_VERSION }}
