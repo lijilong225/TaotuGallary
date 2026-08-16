@@ -1272,6 +1272,13 @@ function applyThumbSize() {
   initIcons();
   (async () => {
     try {
+      const v = await fetch('/api/version').then(r => r.json());
+      if (v.version) {
+        $('#login-version').textContent = v.version;
+        $('#top-version').textContent = v.version;
+      }
+    } catch {}
+    try {
       const data = await api('/api/me');
       showMain(data.user);
     } catch {
