@@ -432,6 +432,7 @@ body {
 .browse-area {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 20px;
 }
 
@@ -567,6 +568,7 @@ body {
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 18px;
+  width: 100%;
 }
 
 .image-grid .masonry-col {
