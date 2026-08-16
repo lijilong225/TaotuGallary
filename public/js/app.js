@@ -36,8 +36,6 @@
     zoomX: 0,
     zoomY: 0,
     favorites: {},
-    favMode: false,
-    stashedImageList: null,
   };
 
   function favKey(item) {
@@ -81,7 +79,6 @@
         delete state.favorites[key];
       }
       updateFavUI(el, key);
-      if (state.favMode && !data.favorited) refreshFavGrid();
     } catch (e) {
       console.error('收藏失败', e);
     }
@@ -93,7 +90,7 @@
       el.innerHTML = icon('heart');
       el.classList.toggle('fav-on', on);
     }
-    $$('.fav-btn').forEach(btn => {
+    $$('#image-grid .fav-btn').forEach(btn => {
       const k = btn.dataset.favKey;
       const on = isFavored(k);
       btn.innerHTML = icon('heart');
@@ -160,82 +157,6 @@
     try { await api('/api/logout', { method: 'POST' }); } catch {}
     showLogin();
   });
-
-  /* ---------------- User dropdown ---------------- */
-  const userMenu = $('#user-menu');
-  const userDropdown = $('#user-dropdown');
-
-  function closeUserDropdown() {
-    userDropdown.classList.add('hidden');
-  }
-
-  userMenu.addEventListener('click', (e) => {
-    e.stopPropagation();
-    userDropdown.classList.toggle('hidden');
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!userMenu.contains(e.target)) closeUserDropdown();
-  });
-
-  $('#dd-favorites').addEventListener('click', (e) => {
-    e.stopPropagation();
-    closeUserDropdown();
-    openFavorites();
-  });
-
-  /* ---------------- Favorites page ---------------- */
-  async function openFavorites() {
-    state.favMode = true;
-    state.stashedImageList = state.imageList;
-    $('#main-view').classList.add('hidden');
-    $('#favorites-view').classList.remove('hidden');
-    $('#lightbox').classList.add('hidden');
-    document.body.style.overflow = '';
-    await refreshFavGrid();
-  }
-
-  function closeFavorites() {
-    state.favMode = false;
-    $('#favorites-view').classList.add('hidden');
-    $('#main-view').classList.remove('hidden');
-    if (state.stashedImageList) {
-      state.imageList = state.stashedImageList;
-      state.stashedImageList = null;
-    }
-    state.lbIndex = -1;
-  }
-
-  $('#fav-back').addEventListener('click', closeFavorites);
-
-  async function refreshFavGrid() {
-    const grid = $('#fav-grid');
-    const empty = $('#fav-empty');
-    const count = $('#fav-count');
-    try {
-      const data = await api('/api/favorites');
-      const items = (data.favorites || []).map(f => ({ ...f }));
-      state.favorites = {};
-      items.forEach(f => {
-        state.favorites[f.entry ? f.path + '|' + f.entry : f.path] = f;
-      });
-      grid.dataset.size = state.thumbSize;
-      count.textContent = items.length ? `共 ${items.length} 个收藏` : '';
-      if (!items.length) {
-        grid.innerHTML = '';
-        empty.classList.remove('hidden');
-        empty.textContent = '暂无收藏，点击图片右下角心形按钮收藏';
-        return;
-      }
-      empty.classList.add('hidden');
-      state.imageList = items;
-      renderMasonry(items, grid);
-    } catch (err) {
-      console.error('加载收藏失败', err);
-      empty.classList.remove('hidden');
-      empty.textContent = err.message || '加载收藏失败';
-    }
-  }
 
 function applyThumbSize() {
     const grid = $('#image-grid');
@@ -661,9 +582,9 @@ function applyThumbSize() {
     lazyLoad();
   }
 
-  function renderMasonry(items, targetGrid) {
+  function renderMasonry(items) {
     state.imageList = items;
-    const grid = targetGrid || $('#image-grid');
+    const grid = $('#image-grid');
     grid.classList.add('masonry');
     grid.dataset.size = state.thumbSize;
     grid.innerHTML = '';
@@ -751,7 +672,7 @@ function applyThumbSize() {
         });
       }, { rootMargin: '200px' });
     }
-    $$('img[data-thumb]').forEach((img) => lazyObserver.observe(img));
+    $$('#image-grid img[data-thumb]').forEach((img) => lazyObserver.observe(img));
   }
 
   /* ---------------- Lightbox ---------------- */

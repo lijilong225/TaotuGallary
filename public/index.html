@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/css/style.css?v=20260816s">
-  <script src="/js/icons.js?v=20260816s"></script>
+  <link rel="stylesheet" href="/css/style.css?v=20260816r">
+  <script src="/js/icons.js?v=20260816r"></script>
 </head>
 <body>
   <div id="login-view" class="login-view hidden">
@@ -30,13 +30,7 @@
     <header class="topbar">
       <div class="brand">套图管理器</div>
       <div class="topbar-right">
-        <div class="user-menu" id="user-menu">
-          <button id="current-user" class="user user-btn"></button>
-          <div id="user-dropdown" class="user-dropdown hidden">
-            <div class="dropdown-item dd-title">账户信息</div>
-            <button type="button" class="dropdown-item dd-action" id="dd-favorites" data-icon="heart">打开收藏</button>
-          </div>
-        </div>
+        <span id="current-user" class="user"></span>
         <button id="btn-logout" class="btn-ghost">退出登录</button>
       </div>
     </header>
@@ -81,18 +75,6 @@
     </div>
   </div>
 
-  <div id="favorites-view" class="favorites-view hidden">
-    <header class="fav-topbar">
-      <button id="fav-back" class="btn-ghost" data-icon="back"></button>
-      <span class="fav-title">我的收藏</span>
-      <span id="fav-count" class="fav-count"></span>
-    </header>
-    <div class="fav-body">
-      <div id="fav-empty" class="empty hidden">暂无收藏</div>
-      <div id="fav-grid" class="image-grid masonry"></div>
-    </div>
-  </div>
-
   <div id="lightbox" class="lightbox hidden">
     <div class="lightbox-stage">
       <img id="lb-img" alt="">
@@ -132,6 +114,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20260816s"></script>
+  <script src="/js/app.js?v=20260816r"></script>
 </body>
 </html>
