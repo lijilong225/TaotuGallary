@@ -547,9 +547,29 @@
       const row = document.createElement('div');
       row.className = 'timeline-row';
       row.dataset.size = state.thumbSize;
-      group.items.forEach(item => {
-        row.appendChild(createThumbBox(item, globalIdx++));
-      });
+      if (state.layoutMode === 'masonry') {
+        row.classList.add('masonry');
+        const width = grid.clientWidth || 800;
+        const size = LAYOUT_SIZES[state.thumbSize];
+        const gap = MASONRY_GAP;
+        const cols = Math.max(2, Math.min(8, Math.floor((width + gap) / (size + gap))));
+        const columns = [];
+        for (let i = 0; i < cols; i++) {
+          const col = document.createElement('div');
+          col.className = 'masonry-col';
+          columns.push(col);
+          row.appendChild(col);
+        }
+        group.items.forEach((item, idx) => {
+          const box = createThumbBox(item, globalIdx++);
+          box.style.aspectRatio = '1 / 1';
+          columns[idx % cols].appendChild(box);
+        });
+      } else {
+        group.items.forEach(item => {
+          row.appendChild(createThumbBox(item, globalIdx++));
+        });
+      }
       grid.appendChild(row);
     });
     lazyLoad();

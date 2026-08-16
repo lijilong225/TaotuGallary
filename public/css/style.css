@@ -693,6 +693,29 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 }
 
+.timeline-row.masonry {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.timeline-row.masonry .masonry-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.timeline-row.masonry .thumb-box {
+  aspect-ratio: auto;
+}
+
+.timeline-row.masonry .thumb-box img {
+  height: auto;
+  object-fit: cover;
+}
+
 .thumb-box {
   position: relative;
   aspect-ratio: 1 / 1;
