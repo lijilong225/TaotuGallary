@@ -5,6 +5,20 @@ const { config } = require('./config');
 const { isImageFile, isArchiveFile, isHiddenName, isVideoFile, normalizeArchiveEntry } = require('./utils');
 const { listEntries, readEntryBuffer } = require('./archive');
 
+const TREE_CACHE_TTL = 30 * 1000;
+const COUNT_CACHE_TTL = 30 * 1000;
+let treeCache = { data: null, ts: 0 };
+const childCountCache = new Map();
+
+function treeCacheIsFresh() {
+  return treeCache.data && Date.now() - treeCache.ts < TREE_CACHE_TTL;
+}
+
+function countCacheIsFresh(key) {
+  const c = childCountCache.get(key);
+  return c && Date.now() - c.ts < COUNT_CACHE_TTL;
+}
+
 function toRel(p) {
   const rel = path.relative(config.galleryRoot, p);
   if (rel.startsWith('..')) throw new Error('path outside gallery root');
@@ -36,6 +50,8 @@ async function isDirectory(p) {
 }
 
 async function buildTree() {
+  if (treeCacheIsFresh()) return treeCache.data;
+
   async function walk(dir) {
     let names;
     try {
@@ -43,12 +59,16 @@ async function buildTree() {
     } catch {
       return [];
     }
+    const stats = await Promise.all(names.map(n =>
+      fs.promises.stat(path.join(dir, n)).catch(() => null)
+    ));
     const out = [];
-    for (const name of names) {
+    for (let i = 0; i < names.length; i++) {
+      const name = names[i];
       if (isHiddenName(name)) continue;
-      const full = path.join(dir, name);
-      const stat = await fs.promises.stat(full).catch(() => null);
+      const stat = stats[i];
       if (!stat) continue;
+      const full = path.join(dir, name);
       if (stat.isDirectory()) {
         out.push({
           name,
@@ -68,7 +88,10 @@ async function buildTree() {
     out.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
     return out;
   }
-  return walk(config.galleryRoot);
+
+  treeCache.data = await walk(config.galleryRoot);
+  treeCache.ts = Date.now();
+  return treeCache.data;
 }
 
 async function listGalleryDir(userPath, pageNum = 1, pageSize = 50, sortBy = 'name', sortOrder = 'asc') {
@@ -76,16 +99,22 @@ async function listGalleryDir(userPath, pageNum = 1, pageSize = 50, sortBy = 'na
   if (!(await isDirectory(dir))) throw new Error('not a directory');
 
   const entries = await fs.promises.readdir(dir);
+
+  const stats = await Promise.all(entries.map(n =>
+    fs.promises.stat(path.join(dir, n)).catch(() => null)
+  ));
+
   let folders = [];
   let archives = [];
   let images = [];
   let videos = [];
 
-  for (const name of entries) {
+  for (let i = 0; i < entries.length; i++) {
+    const name = entries[i];
     if (isHiddenName(name)) continue;
-    const full = path.join(dir, name);
-    const stat = await fs.promises.stat(full).catch(() => null);
+    const stat = stats[i];
     if (!stat) continue;
+    const full = path.join(dir, name);
     if (stat.isDirectory()) {
       const childCount = await countChildImages(full);
       folders.push({ name, rel: toRel(full), type: 'dir', count: childCount, mtime: stat.mtimeMs });
@@ -134,18 +163,31 @@ async function listGalleryDir(userPath, pageNum = 1, pageSize = 50, sortBy = 'na
 }
 
 async function countChildImages(dir) {
+  const cached = childCountCache.get(dir);
+  if (cached && Date.now() - cached.ts < COUNT_CACHE_TTL) return cached.count;
+
   let count = 0;
   try {
     const entries = await fs.promises.readdir(dir);
-    for (const name of entries) {
-      if (isHiddenName(name)) continue;
-      const full = path.join(dir, name);
-      const stat = await fs.promises.stat(full).catch(() => null);
+    const stats = await Promise.all(entries.map(n =>
+      fs.promises.stat(path.join(dir, n)).catch(() => null)
+    ));
+    const dirs = [];
+    for (let i = 0; i < entries.length; i++) {
+      if (isHiddenName(entries[i])) continue;
+      const stat = stats[i];
       if (!stat) continue;
-      if (stat.isDirectory()) count += await countChildImages(full);
-      else if (isImageFile(name)) count += 1;
+      if (stat.isDirectory()) {
+        dirs.push(path.join(dir, entries[i]));
+      } else if (isImageFile(entries[i])) {
+        count += 1;
+      }
     }
+    const childCounts = await Promise.all(dirs.map(d => countChildImages(d)));
+    count += childCounts.reduce((a, b) => a + b, 0);
   } catch { /* ignore */ }
+
+  childCountCache.set(dir, { count, ts: Date.now() });
   return count;
 }
 

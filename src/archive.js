@@ -1,6 +1,28 @@
 const { execFile } = require('child_process');
+const fs = require('fs');
 const AdmZip = require('adm-zip');
 const { normalizeArchiveEntry } = require('./utils');
+
+const entriesCache = new Map();
+const ENTRIES_CACHE_TTL = 30 * 1000;
+
+function getCachedEntries(filePath) {
+  try {
+    const mtime = fs.statSync(filePath).mtimeMs;
+    const key = filePath + '@' + mtime;
+    const c = entriesCache.get(key);
+    if (c && Date.now() - c.ts < ENTRIES_CACHE_TTL) return c.data;
+  } catch { /* ignore */ }
+  return null;
+}
+
+function setCachedEntries(filePath, data) {
+  try {
+    const mtime = fs.statSync(filePath).mtimeMs;
+    const key = filePath + '@' + mtime;
+    entriesCache.set(key, { data, ts: Date.now() });
+  } catch { /* ignore */ }
+}
 
 function execFileAsync(cmd, args, options = {}) {
   return new Promise((resolve, reject) => {
@@ -41,9 +63,13 @@ function parseBsdtarTime(fields) {
 }
 
 async function listEntries(filePath, ext) {
+  const cached = getCachedEntries(filePath);
+  if (cached) return cached;
+
+  let result;
   if (isRar(ext)) {
     const { stdout } = await execFileAsync('bsdtar', ['-tvf', filePath]);
-    return stdout.split('\n')
+    result = stdout.split('\n')
       .map(l => l.trim())
       .filter(Boolean)
       .map(l => {
@@ -59,14 +85,18 @@ async function listEntries(filePath, ext) {
         }
         return { name: normalizeArchiveEntry(name), isDirectory: l.endsWith('/'), mtime: time };
       });
+  } else {
+    const zip = new AdmZip(filePath);
+    result = zip.getEntries().map(e => ({
+      name: normalizeArchiveEntry(e.entryName),
+      isDirectory: e.isDirectory,
+      size: e.header.size,
+      mtime: e.header.time ? new Date(e.header.time).getTime() : null,
+    }));
   }
-  const zip = new AdmZip(filePath);
-  return zip.getEntries().map(e => ({
-    name: normalizeArchiveEntry(e.entryName),
-    isDirectory: e.isDirectory,
-    size: e.header.size,
-    mtime: e.header.time ? new Date(e.header.time).getTime() : null,
-  }));
+
+  setCachedEntries(filePath, result);
+  return result;
 }
 
 async function readEntryBuffer(filePath, ext, entryName) {
