@@ -12,6 +12,8 @@ const { loginLimiter } = require('../middleware');
 
 const router = express.Router();
 
+const THUMB_SIZES = { s: 160, m: 320, l: 640 };
+
 // 应用登录速率限制到整个路由
 router.use(loginLimiter);
 
@@ -124,12 +126,13 @@ router.get('/thumb', requireAuth, async (req, res, next) => {
     const stat = fs.statSync(filePath);
     if (stat.isDirectory()) return res.status(400).json({ error: '不能为目录生成缩略图' });
 
+    const width = THUMB_SIZES[req.query.size] || undefined;
     let result;
     if (isArchiveFile(filePath)) {
       if (!entry) return res.status(400).json({ error: '缺少 entry 参数' });
-      result = await thumb.getThumbForArchiveEntry(filePath, entry);
+      result = await thumb.getThumbForArchiveEntry(filePath, entry, width);
     } else if (isImageFile(filePath) || isVideoFile(filePath)) {
-      result = await thumb.getThumbForFile(filePath);
+      result = await thumb.getThumbForFile(filePath, width);
     } else {
       return res.status(400).json({ error: '不支持的文件类型' });
     }

@@ -16,6 +16,7 @@
     pageNum: 1,
     pageSize: 50,
     totalPages: 1,
+    thumbSize: 'm',
     zoom: false,
     zoomX: 0,
     zoomY: 0,
@@ -54,6 +55,7 @@
     $('#login-view').classList.add('hidden');
     $('#main-view').classList.remove('hidden');
     $('#current-user').textContent = user;
+    applyThumbSize();
     loadTree();
   }
 
@@ -87,6 +89,23 @@
   $('#sort-order').addEventListener('change', (e) => {
     state.sortOrder = e.target.value;
     if (state.browseData) renderBrowse();
+  });
+
+  /* ---------------- Thumb size ---------------- */
+  function applyThumbSize() {
+    const grid = $('#image-grid');
+    if (grid) grid.dataset.size = state.thumbSize;
+    $$('#thumb-size-group .thumb-size-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.size === state.thumbSize);
+    });
+  }
+
+  $$('#thumb-size-group .thumb-size-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.thumbSize = btn.dataset.size;
+      applyThumbSize();
+      if (state.browseData) renderBrowse();
+    });
   });
 
   /* ---------------- Tree ---------------- */
@@ -408,10 +427,11 @@
   /* ---------------- Media grid ---------------- */
   function thumbUrl(item) {
     const p = encodeURIComponent(item.path);
+    const sz = `&size=${state.thumbSize}`;
     if (item.type === 'archive') {
-      return `/api/thumb?path=${p}&entry=${encodeURIComponent(item.entry)}`;
+      return `/api/thumb?path=${p}&entry=${encodeURIComponent(item.entry)}${sz}`;
     }
-    return `/api/thumb?path=${p}`;
+    return `/api/thumb?path=${p}${sz}`;
   }
 
   function rawUrl(item) {
@@ -433,6 +453,7 @@
   function renderMediaGrid(items) {
     state.imageList = items;
     const grid = $('#image-grid');
+    grid.dataset.size = state.thumbSize;
     grid.innerHTML = '';
     items.forEach((item, idx) => {
       const box = document.createElement('div');
