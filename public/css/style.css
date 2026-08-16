@@ -829,6 +829,12 @@ body {
 .video-wrap:hover .video-controls,
 .video-wrap:focus-within .video-controls { opacity: 1; pointer-events: auto; }
 
+.video-controls.show { opacity: 1; pointer-events: auto; }
+
+/* 全屏播放时由 JS 控制显隐，暂时禁用 hover 触发，实现静止自动隐藏 */
+#lightbox:fullscreen .video-controls { opacity: 0; pointer-events: none; }
+#lightbox:fullscreen .video-controls.show { opacity: 1; pointer-events: auto; }
+
 .vc-btn {
   width: 34px;
   height: 34px;

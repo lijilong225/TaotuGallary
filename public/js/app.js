@@ -581,6 +581,7 @@
 
   function closeLightbox() {
     stopVideo();
+    clearTimeout(vcTimer);
     $('#lightbox').classList.add('hidden');
     $('#lb-img').src = '';
     document.body.style.overflow = '';
@@ -926,6 +927,47 @@
 
   /* ---------------- Video controls ---------------- */
   const video = $('#lb-video');
+  const videoWrap = $('#lb-video-wrap');
+  let vcTimer = null;
+
+  function showVideoControls() {
+    videoWrap.querySelector('.video-controls').classList.add('show');
+  }
+
+  function hideVideoControls() {
+    videoWrap.querySelector('.video-controls').classList.remove('show');
+  }
+
+  function resetVideoControlsTimer() {
+    clearTimeout(vcTimer);
+    vcTimer = setTimeout(() => {
+      if (!video.paused && document.fullscreenElement) hideVideoControls();
+    }, 3000);
+  }
+
+  function onVideoActivity() {
+    if (document.fullscreenElement) {
+      showVideoControls();
+      if (!video.paused) resetVideoControlsTimer();
+    }
+  }
+
+  function syncVideoControls() {
+    clearTimeout(vcTimer);
+    if (video.paused) {
+      showVideoControls();
+      return;
+    }
+    if (document.fullscreenElement) {
+      showVideoControls();
+      resetVideoControlsTimer();
+    } else {
+      hideVideoControls();
+    }
+  }
+
+  videoWrap.addEventListener('mousemove', onVideoActivity);
+  videoWrap.addEventListener('pointerdown', onVideoActivity);
 
   function fmtTime(s) {
     if (!isFinite(s) || s < 0) s = 0;
@@ -939,8 +981,8 @@
     else video.pause();
   });
 
-  video.addEventListener('play', () => { $('#vc-play').innerHTML = '&#10074;&#10074;'; });
-  video.addEventListener('pause', () => { $('#vc-play').innerHTML = '&#9658;'; });
+  video.addEventListener('play', () => { $('#vc-play').innerHTML = '&#10074;&#10074;'; syncVideoControls(); });
+  video.addEventListener('pause', () => { $('#vc-play').innerHTML = '&#9658;'; syncVideoControls(); });
 
   video.addEventListener('timeupdate', () => {
     if (!video.duration) return;
@@ -988,6 +1030,11 @@
     } else if (target.requestFullscreen) {
       target.requestFullscreen();
     }
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    if ($('#lb-video-wrap').classList.contains('hidden')) return;
+    syncVideoControls();
   });
 
   video.addEventListener('dblclick', () => {
