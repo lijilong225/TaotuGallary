@@ -63,6 +63,27 @@
     loadTree();
   }
 
+  $('#login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = $('#username').value.trim();
+    const password = $('#password').value;
+    try {
+      const data = await api('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      });
+      showMain(data.user);
+    } catch (err) {
+      $('#login-error').textContent = err.message;
+      $('#login-error').classList.remove('hidden');
+    }
+  });
+
+  $('#btn-logout').addEventListener('click', async () => {
+    try { await api('/api/logout', { method: 'POST' }); } catch {}
+    showLogin();
+  });
+
 function applyThumbSize() {
     const grid = $('#image-grid');
     if (grid) grid.dataset.size = state.thumbSize;
