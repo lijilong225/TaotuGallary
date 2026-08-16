@@ -528,30 +528,6 @@ html, body {
 
 #vc-volume { flex: 0 0 90px; }
 
-.lightbox-toolbar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 14px;
-  background: rgba(0,0,0,.5);
-  z-index: 10;
-  pointer-events: none;
-}
-
-#lightbox:fullscreen .lightbox-toolbar {
-  display: none;
-}
-
-.lightbox-toolbar .lb-btn,
-.lightbox-toolbar .lb-counter {
-  pointer-events: auto;
-}
-
 .lb-nav {
   position: absolute;
   top: 50%;
@@ -579,6 +555,38 @@ html, body {
   display: flex;
 }
 
+.lb-corner-btn {
+  position: absolute;
+  top: 16px;
+  z-index: 40;
+  width: 40px;
+  height: 40px;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  font-size: 20px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+}
+
+.lb-close { left: 16px; }
+.lb-info-toggle { right: 16px; }
+
+.lb-corner-btn:hover { background: rgba(0,0,0,.85); }
+
+.lb-counter {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 13px;
+  z-index: 40;
+}
+
 .lb-btn {
   width: 40px;
   height: 40px;
@@ -591,14 +599,12 @@ html, body {
 
 .lb-btn:hover { background: rgba(255,255,255,.35); }
 
-.lb-counter { color: #fff; font-size: 13px; min-width: 60px; text-align: center; }
-
 /* ---------- Lightbox info panel ---------- */
 .lb-info-panel {
   position: absolute;
   top: 0;
   right: 0;
-  bottom: 68px;
+  bottom: 0;
   width: 280px;
   background: #fff;
   border-left: 1px solid var(--border);
