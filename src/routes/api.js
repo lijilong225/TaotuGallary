@@ -8,7 +8,7 @@ const gallery = require('../gallery');
 const thumb = require('../thumbnail');
 const favorites = require('../favorites');
 const preferences = require('../preferences');
-const version = require('../version');
+const version = require('../version').getVersion;
 const { mimeType, isImageFile, isArchiveFile, isVideoFile } = require('../utils');
 const logger = require('../logger');
 const { loginLimiter } = require('../middleware');
@@ -44,7 +44,7 @@ async function sendRawImage(res, filePath, userPath) {
 
 router.get('/ping', (req, res) => res.json({ ok: true }));
 
-router.get('/version', (req, res) => res.json({ version }));
+router.get('/version', (req, res) => res.json({ version: version() }));
 
 router.get('/me', (req, res) => {
   if (isAuth(req)) return res.json({ user: req.session.user });
