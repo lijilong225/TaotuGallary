@@ -1,13 +1,11 @@
-FROM node:22-slim
+FROM node:22-alpine
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends libarchive-tools ffmpeg \
-  && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache libarchive-tools ffmpeg
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install --omit=dev
+RUN npm install --omit=dev && npm cache clean --force
 
 COPY . .
 
