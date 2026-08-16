@@ -366,12 +366,14 @@
     const mediaItems = [];
     if (hasImages) {
       data.images.forEach((img) => mediaItems.push({
-        type: 'file', mime: 'image', path: img.rel, name: img.name, mtime: img.mtime,
+        type: img.type || 'file', mime: 'image', path: img.path != null ? img.path : img.rel,
+        name: img.name, mtime: img.mtime, entry: img.entry,
       }));
     }
     if (hasVideos) {
       data.videos.forEach((v) => mediaItems.push({
-        type: 'file', mime: 'video', path: v.rel, name: v.name, mtime: v.mtime,
+        type: v.type || 'file', mime: 'video', path: v.path != null ? v.path : v.rel,
+        name: v.name, mtime: v.mtime, entry: v.entry,
       }));
     }
     if (mediaItems.length) renderMediaGrid(sortItems(mediaItems, state.sortBy));

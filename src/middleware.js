@@ -65,6 +65,7 @@ const errorHandler = (err, req, res, next) => {
   logger.error('请求处理错误', {
     ip: req.ip,
     path: req.path,
+    query: req.query,
     method: req.method,
     user: req.session?.user,
     error: err.message,
@@ -87,6 +88,7 @@ const requestLogger = (req, res, next) => {
     logger[level]('HTTP请求', {
       method: req.method,
       path: req.path,
+      query: req.query,
       statusCode: res.statusCode,
       duration: `${duration}ms`,
       ip: req.ip,
