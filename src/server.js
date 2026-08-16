@@ -5,6 +5,7 @@ const { config, ROOT_DIR } = require('./config');
 const api = require('./routes/api');
 const logger = require('./logger');
 const { errorHandler, requestLogger, apiLimiter } = require('./middleware');
+const { cleanupThumbCache } = require('./thumbnail');
 const { execSync } = require('child_process');
 
 function checkBinary(cmd) {
@@ -77,6 +78,7 @@ async function init() {
     });
     if (!checkBinary('ffmpeg')) logger.warn('警告: 未找到ffmpeg - 视频缩略图生成可能失败');
     if (!checkBinary('bsdtar')) logger.warn('警告: 未找到bsdtar - RAR压缩包支持可能不可用');
+    cleanupThumbCache().catch(() => {});
   });
 }
 

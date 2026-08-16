@@ -145,6 +145,77 @@ async function extractVideoToCache(archivePath, entryName) {
   return target;
 }
 
+async function cleanupThumbCache() {
+  const logger = require('./logger');
+  const { isImageFile, isVideoFile, isArchiveFile, isHiddenName } = require('./utils');
+  const { readEntryBuffer, listEntries } = require('./archive');
+
+  const expected = new Set();
+  let fileCount = 0;
+
+  async function walkDir(dir) {
+    let names;
+    try { names = await fs.promises.readdir(dir); } catch { return; }
+    for (const name of names) {
+      if (isHiddenName(name)) continue;
+      const full = path.join(dir, name);
+      const stat = await fs.promises.stat(full).catch(() => null);
+      if (!stat) continue;
+      if (stat.isDirectory()) {
+        await walkDir(full);
+      } else if (isImageFile(name) || isVideoFile(name)) {
+        const key = cacheKey('file', 'v2', full, stat.size, stat.mtimeMs, config.thumbSize, '');
+        expected.add(key);
+        fileCount++;
+      } else if (isArchiveFile(name)) {
+        let entries;
+        try { entries = await listEntries(full); } catch { continue; }
+        for (const entry of entries) {
+          if (isImageFile(entry) || isVideoFile(entry)) {
+            const key = cacheKey('archive', 'v2', full, stat.size, stat.mtimeMs, entry, config.thumbSize, '');
+            expected.add(key);
+            fileCount++;
+          }
+        }
+      }
+    }
+  }
+
+  logger.info('开始清理缩略图缓存...');
+  await walkDir(config.galleryRoot);
+  logger.info(`扫描到 ${fileCount} 个媒体文件，开始比对缩略图目录`);
+
+  let deleted = 0;
+  let freed = 0;
+  const thumbRoot = config.thumbDir;
+
+  if (!fs.existsSync(thumbRoot)) return;
+
+  const dirs = await fs.promises.readdir(thumbRoot);
+  for (const d of dirs) {
+    const sub = path.join(thumbRoot, d);
+    const stat = await fs.promises.stat(sub).catch(() => null);
+    if (!stat || !stat.isDirectory()) continue;
+    const files = await fs.promises.readdir(sub);
+    for (const f of files) {
+      const fp = path.join(sub, f);
+      if (!expected.has(fp)) {
+        const sz = (await fs.promises.stat(fp).catch(() => null))?.size || 0;
+        await fs.promises.unlink(fp).catch(() => {});
+        deleted++;
+        freed += sz;
+      }
+    }
+    // remove empty subdirectories
+    try {
+      const remaining = await fs.promises.readdir(sub);
+      if (remaining.length === 0) await fs.promises.rmdir(sub);
+    } catch { /* ignore */ }
+  }
+
+  logger.info(`缩略图清理完成: 删除 ${deleted} 个文件，释放 ${(freed / 1024 / 1024).toFixed(1)} MB`);
+}
+
 module.exports = {
   getThumbForFile,
   getThumbForArchiveEntry,
@@ -153,4 +224,5 @@ module.exports = {
   generateThumbFromVideo,
   cacheKey,
   mimeType,
+  cleanupThumbCache,
 };
