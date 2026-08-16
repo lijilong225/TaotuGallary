@@ -104,12 +104,12 @@ function applyThumbSize() {
   $('#sort-by').addEventListener('change', (e) => {
     state.sortBy = e.target.value;
     $('#time-group').classList.toggle('hidden', state.sortBy !== 'time');
-    if (state.browseData) renderBrowse();
+    if (state.browseData) openDirectory(state.currentPath, 1);
   });
 
   $('#sort-order').addEventListener('change', (e) => {
     state.sortOrder = e.target.value;
-    if (state.browseData) renderBrowse();
+    if (state.browseData) openDirectory(state.currentPath, 1);
   });
 
   $('#time-group').addEventListener('change', (e) => {
@@ -247,15 +247,14 @@ function applyThumbSize() {
     state.pageNum = pageNum;
     renderBreadcrumb();
     try {
-      const data = await api(`/api/browse?path=${encodeURIComponent(relPath || '')}&page=${pageNum}&pageSize=${state.pageSize}`);
+      const data = await api(`/api/browse?path=${encodeURIComponent(relPath || '')}&page=${pageNum}&pageSize=${state.pageSize}&sortBy=${state.sortBy}&sortOrder=${state.sortOrder}`);
       state.totalPages = data.pagination ? data.pagination.totalPages : 1;
       if (data.pagination && data.pagination.pageNum) state.pageNum = data.pagination.pageNum;
       state.browseData = {
         mode: 'dir',
         folders: data.folders || [],
         archives: data.archives || [],
-        images: data.images || [],
-        videos: data.videos || [],
+        media: data.media || [],
       };
       renderBrowse();
     } catch (err) {
@@ -313,22 +312,6 @@ function applyThumbSize() {
     pag.appendChild(mkBtn('»', total, 'page-last', state.pageNum === total));
   }
 
-  function sortItems(items, key) {
-    const dir = state.sortOrder === 'desc' ? -1 : 1;
-    return items.slice().sort((a, b) => {
-      let r;
-      if (key === 'time') {
-        const ta = a.mtime != null ? a.mtime : 0;
-        const tb = b.mtime != null ? b.mtime : 0;
-        r = ta - tb;
-        if (r === 0) r = a.name.localeCompare(b.name, 'zh');
-      } else {
-        r = a.name.localeCompare(b.name, 'zh');
-      }
-      return r * dir;
-    });
-  }
-
   function clearArea() {
     $('#empty-tip').classList.add('hidden');
     $('#folder-grid').innerHTML = '';
@@ -353,17 +336,17 @@ function applyThumbSize() {
     if (!data) return;
     const hasFolders = data.folders.length;
     const hasArchives = data.archives.length;
-    const hasImages = data.images.length;
-    const hasVideos = data.videos.length;
+    const mediaItems = data.media || [];
+    const hasMedia = mediaItems.length;
 
-    if (!hasFolders && !hasArchives && !hasImages && !hasVideos) {
+    if (!hasFolders && !hasArchives && !hasMedia) {
       showEmpty('该目录下暂无内容');
       return;
     }
     clearArea();
 
-    const folders = sortItems(data.folders, state.sortBy);
-    const archives = sortItems(data.archives, state.sortBy);
+    const folders = data.folders;
+    const archives = data.archives;
     if (hasFolders) {
       $('#folder-grid').classList.remove('hidden');
       renderFolderCards(folders, $('#folder-grid'));
@@ -372,20 +355,7 @@ function applyThumbSize() {
       $('#archive-grid').classList.remove('hidden');
       renderFolderCards(archives, $('#archive-grid'));
     }
-    const mediaItems = [];
-    if (hasImages) {
-      data.images.forEach((img) => mediaItems.push({
-        type: img.type || 'file', mime: 'image', path: img.path != null ? img.path : img.rel,
-        name: img.name, mtime: img.mtime, entry: img.entry,
-      }));
-    }
-    if (hasVideos) {
-      data.videos.forEach((v) => mediaItems.push({
-        type: v.type || 'file', mime: 'video', path: v.path != null ? v.path : v.rel,
-        name: v.name, mtime: v.mtime, entry: v.entry,
-      }));
-    }
-    if (mediaItems.length) renderMediaGrid(sortItems(mediaItems, state.sortBy));
+    if (hasMedia) renderMediaGrid(mediaItems);
     renderPagination();
   }
 
@@ -416,15 +386,11 @@ function applyThumbSize() {
     state.currentPath = relPath;
     renderBreadcrumb();
     try {
-      const data = await api('/api/archive-images?path=' + encodeURIComponent(relPath));
-      const mediaItems = [];
-      (data.images || []).forEach((img) => mediaItems.push({
-        type: 'archive', mime: 'image', path: relPath, entry: img.entry, name: img.name, mtime: img.mtime,
+      const data = await api('/api/archive-images?path=' + encodeURIComponent(relPath) + '&sortBy=' + state.sortBy + '&sortOrder=' + state.sortOrder);
+      const mediaItems = (data.media || []).map(m => ({
+        type: 'archive', mime: m.mime, path: relPath, entry: m.entry, name: m.name, mtime: m.mtime,
       }));
-      (data.videos || []).forEach((v) => mediaItems.push({
-        type: 'archive', mime: 'video', path: relPath, entry: v.entry, name: v.name, mtime: v.mtime,
-      }));
-      state.browseData = { mode: 'archive', folders: [], archives: [], images: mediaItems.filter(i => i.mime === 'image'), videos: mediaItems.filter(i => i.mime === 'video') };
+      state.browseData = { mode: 'archive', folders: [], archives: [], media: mediaItems };
       if (!mediaItems.length) {
         showEmpty('压缩包内没有图片或视频');
         return;

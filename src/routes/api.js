@@ -121,14 +121,18 @@ router.get('/browse', requireAuth, async (req, res, next) => {
     const p = req.query.path || '';
     const pageNum = Math.max(1, parseInt(req.query.page, 10) || 1);
     const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 50));
-    res.json(await gallery.listGalleryDir(p, pageNum, pageSize));
+    const sortBy = req.query.sortBy === 'time' ? 'time' : 'name';
+    const sortOrder = req.query.sortOrder === 'desc' ? 'desc' : 'asc';
+    res.json(await gallery.listGalleryDir(p, pageNum, pageSize, sortBy, sortOrder));
   } catch (e) { next(e); }
 });
 
 router.get('/archive-images', requireAuth, async (req, res, next) => {
   try {
     const p = req.query.path || '';
-    res.json(await gallery.listArchiveMedia(p));
+    const sortBy = req.query.sortBy === 'time' ? 'time' : 'name';
+    const sortOrder = req.query.sortOrder === 'desc' ? 'desc' : 'asc';
+    res.json(await gallery.listArchiveMedia(p, sortBy, sortOrder));
   } catch (e) { next(e); }
 });
 

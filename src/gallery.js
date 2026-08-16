@@ -71,7 +71,7 @@ async function buildTree() {
   return walk(config.galleryRoot);
 }
 
-async function listGalleryDir(userPath, pageNum = 1, pageSize = 50) {
+async function listGalleryDir(userPath, pageNum = 1, pageSize = 50, sortBy = 'name', sortOrder = 'asc') {
   const dir = safeResolve(userPath);
   if (!(await isDirectory(dir))) throw new Error('not a directory');
 
@@ -92,21 +92,27 @@ async function listGalleryDir(userPath, pageNum = 1, pageSize = 50) {
     } else if (isArchiveFile(name)) {
       archives.push({ name, rel: toRel(full), type: 'archive', mtime: stat.mtimeMs });
     } else if (isVideoFile(name)) {
-      videos.push({ name, rel: toRel(full), type: 'video', mtime: stat.mtimeMs });
+      videos.push({ name, path: toRel(full), type: 'file', mime: 'video', mtime: stat.mtimeMs });
     } else if (isImageFile(name)) {
-      images.push({ name, rel: toRel(full), type: 'image', mtime: stat.mtimeMs });
+      images.push({ name, path: toRel(full), type: 'file', mime: 'image', mtime: stat.mtimeMs });
     }
   }
 
-  const sortBy = (arr) => arr.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
-  folders = sortBy(folders);
-  archives = sortBy(archives);
-  images = sortBy(images);
-  videos = sortBy(videos);
+  const sortByName = (arr) => arr.sort((a, b) => a.name.localeCompare(b.name, 'zh'));
+  folders = sortByName(folders);
+  archives = sortByName(archives);
 
-  // 文件夹和压缩包不分页，直接返回
-  // 图片和视频进行分页
+  // 图片和视频按 sortBy/sortOrder 排序后合并分页
+  // 所有媒体（图片+视频）统一排序后分页
   const allMedia = [...images, ...videos];
+  const sortMedia = (arr) => {
+    const dir = sortOrder === 'desc' ? -1 : 1;
+    return arr.sort((a, b) => {
+      if (sortBy === 'time') return (a.mtime - b.mtime) * dir;
+      return a.name.localeCompare(b.name, 'zh') * dir;
+    });
+  };
+  sortMedia(allMedia);
   const totalCount = allMedia.length;
   const totalPages = Math.ceil(totalCount / pageSize);
   const page = Math.max(1, Math.min(pageNum, totalPages || 1));
@@ -114,15 +120,10 @@ async function listGalleryDir(userPath, pageNum = 1, pageSize = 50) {
   const end = start + pageSize;
   const pagedMedia = allMedia.slice(start, end);
 
-  // 按照原始类型分类分页后的媒体
-  const pagedImages = pagedMedia.filter(e => e.type === 'image');
-  const pagedVideos = pagedMedia.filter(e => e.type === 'video');
-
   return {
     folders,
     archives,
-    images: pagedImages,
-    videos: pagedVideos,
+    media: pagedMedia,
     pagination: {
       pageNum: page,
       pageSize: pageSize,
@@ -230,18 +231,22 @@ async function getMediaInfo(userPath, entryName) {
   return info;
 }
 
-async function listArchiveMedia(archiveRel) {
+async function listArchiveMedia(archiveRel, sortBy = 'name', sortOrder = 'asc') {
   const full = safeResolve(archiveRel);
   if (!exists(full)) throw new Error('archive not found');
   const entries = await listEntries(full, full);
   const media = entries.filter(e => !e.isDirectory && (isImageFile(e.name) || isVideoFile(e.name)));
-  const images = [];
-  const videos = [];
+  const allMedia = [];
   for (const e of media) {
-    if (isVideoFile(e.name)) videos.push({ name: e.name, entry: e.name, type: 'video', mtime: e.mtime });
-    else images.push({ name: e.name, entry: e.name, type: 'image', mtime: e.mtime });
+    if (isVideoFile(e.name)) allMedia.push({ name: e.name, entry: e.name, type: 'file', mime: 'video', mtime: e.mtime });
+    else allMedia.push({ name: e.name, entry: e.name, type: 'file', mime: 'image', mtime: e.mtime });
   }
-  return { images, videos };
+  const dir = sortOrder === 'desc' ? -1 : 1;
+  allMedia.sort((a, b) => {
+    if (sortBy === 'time') return (a.mtime - b.mtime) * dir;
+    return a.name.localeCompare(b.name, 'zh') * dir;
+  });
+  return { media: allMedia };
 }
 
 module.exports = { buildTree, listGalleryDir, listArchiveMedia, getMediaInfo, safeResolve, toRel, exists, isDirectory };
