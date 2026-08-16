@@ -529,15 +529,6 @@ function applyThumbSize() {
     renderMasonry(items);
   }
 
-  function shortestColumn(cols) {
-    let min = cols[0], minH = cols[0].offsetHeight || 0;
-    for (let i = 1; i < cols.length; i++) {
-      const h = cols[i].offsetHeight || 0;
-      if (h < minH) { min = cols[i]; minH = h; }
-    }
-    return min;
-  }
-
   function renderTimeline(items) {
     const groups = groupByTime(items, state.timeGroup);
     const grid = $('#image-grid');
@@ -557,17 +548,22 @@ function applyThumbSize() {
       const size = LAYOUT_SIZES[state.thumbSize];
       const gap = MASONRY_GAP;
       const cols = Math.max(2, Math.min(8, Math.floor((width + gap) / (size + gap))));
+      const colWidth = (width - gap * (cols - 1)) / cols;
       const columns = [];
+      const colHeights = new Array(cols).fill(0);
       for (let i = 0; i < cols; i++) {
         const col = document.createElement('div');
         col.className = 'masonry-col';
+        col.style.flex = '0 0 ' + colWidth + 'px';
         columns.push(col);
         row.appendChild(col);
       }
       group.items.forEach((item, idx) => {
         const box = createThumbBox(item, globalIdx++);
         box.style.aspectRatio = '1 / 1';
-        shortestColumn(columns).appendChild(box);
+        const si = colHeights.indexOf(Math.min(...colHeights));
+        columns[si].appendChild(box);
+        colHeights[si] += colWidth + gap;
       });
       grid.appendChild(row);
     });
@@ -584,17 +580,22 @@ function applyThumbSize() {
     const size = LAYOUT_SIZES[state.thumbSize];
     const gap = MASONRY_GAP;
     const cols = Math.max(2, Math.min(8, Math.floor((width + gap) / (size + gap))));
+    const colWidth = (width - gap * (cols - 1)) / cols;
     const columns = [];
+    const colHeights = new Array(cols).fill(0);
     for (let i = 0; i < cols; i++) {
       const col = document.createElement('div');
       col.className = 'masonry-col';
+      col.style.flex = '0 0 ' + colWidth + 'px';
       columns.push(col);
       grid.appendChild(col);
     }
     items.forEach((item, idx) => {
       const box = createThumbBox(item, idx);
       box.style.aspectRatio = '1 / 1';
-      shortestColumn(columns).appendChild(box);
+      const si = colHeights.indexOf(Math.min(...colHeights));
+      columns[si].appendChild(box);
+      colHeights[si] += colWidth + gap;
     });
     lazyLoad();
   }

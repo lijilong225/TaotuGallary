@@ -572,7 +572,7 @@ body {
 }
 
 .image-grid .masonry-col {
-  flex: 1 1 0;
+  flex: none;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -641,7 +641,7 @@ body {
 }
 
 .timeline-row .masonry-col {
-  flex: 1 1 0;
+  flex: none;
   min-width: 0;
   display: flex;
   flex-direction: column;
