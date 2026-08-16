@@ -204,9 +204,10 @@
       crumb.className = 'crumb';
       crumb.textContent = part;
       crumb.dataset.path = acc;
+      const crumbPath = acc;
       crumb.addEventListener('click', () => {
-        state.currentPath = acc;
-        openDirectory(acc);
+        state.currentPath = crumbPath;
+        openDirectory(crumbPath);
       });
       bc.appendChild(crumb);
     });
