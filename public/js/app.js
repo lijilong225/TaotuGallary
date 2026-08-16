@@ -13,6 +13,9 @@
     browseData: null,
     sortBy: 'name',
     sortOrder: 'asc',
+    pageNum: 1,
+    pageSize: 50,
+    totalPages: 1,
     zoom: false,
     zoomX: 0,
     zoomY: 0,
@@ -210,11 +213,14 @@
   }
 
   /* ---------------- Browsing ---------------- */
-  async function openDirectory(relPath) {
+  async function openDirectory(relPath, pageNum = 1) {
     state.currentPath = relPath;
+    state.pageNum = pageNum;
     renderBreadcrumb();
     try {
-      const data = await api('/api/browse?path=' + encodeURIComponent(relPath || ''));
+      const data = await api(`/api/browse?path=${encodeURIComponent(relPath || '')}&page=${pageNum}&pageSize=${state.pageSize}`);
+      state.totalPages = data.pagination ? data.pagination.totalPages : 1;
+      if (data.pagination && data.pagination.pageNum) state.pageNum = data.pagination.pageNum;
       state.browseData = {
         mode: 'dir',
         folders: data.folders || [],
@@ -226,6 +232,56 @@
     } catch (err) {
       showEmpty(err.message);
     }
+  }
+
+  function renderPagination() {
+    const pag = $('#pagination');
+    const data = state.browseData;
+    if (!data || data.mode !== 'dir' || state.totalPages <= 1) {
+      pag.classList.add('hidden');
+      return;
+    }
+    pag.classList.remove('hidden');
+    pag.innerHTML = '';
+
+    const pageSizeSel = document.createElement('select');
+    pageSizeSel.className = 'page-size';
+    [50, 80, 100].forEach((n) => {
+      const opt = document.createElement('option');
+      opt.value = n;
+      opt.textContent = `${n} / 页`;
+      opt.selected = n === state.pageSize;
+      pageSizeSel.appendChild(opt);
+    });
+    pageSizeSel.addEventListener('change', () => {
+      state.pageSize = parseInt(pageSizeSel.value, 10);
+      state.pageNum = 1;
+      openDirectory(state.currentPath, 1);
+    });
+    pag.appendChild(pageSizeSel);
+
+    const mkBtn = (label, page, cls, disabled) => {
+      const btn = document.createElement('button');
+      btn.className = 'page-btn' + (cls ? ' ' + cls : '');
+      btn.textContent = label;
+      btn.disabled = !!disabled;
+      btn.addEventListener('click', () => openDirectory(state.currentPath, page));
+      return btn;
+    };
+
+    pag.appendChild(mkBtn('«', 1, 'page-first', state.pageNum === 1));
+    pag.appendChild(mkBtn('‹', state.pageNum - 1, 'page-prev', state.pageNum === 1));
+
+    const total = state.totalPages;
+    const cur = state.pageNum;
+    const start = Math.max(1, Math.min(cur - 2, total - 4));
+    const end = Math.min(total, start + 4);
+    for (let p = start; p <= end; p++) {
+      pag.appendChild(mkBtn(String(p), p, p === cur ? 'page-cur' : '', p === cur));
+    }
+
+    pag.appendChild(mkBtn('›', state.pageNum + 1, 'page-next', state.pageNum === total));
+    pag.appendChild(mkBtn('»', total, 'page-last', state.pageNum === total));
   }
 
   function sortItems(items, key) {
@@ -258,6 +314,7 @@
 
   function showEmpty(msg) {
     $('#sortbar').classList.add('hidden');
+    $('#pagination').classList.add('hidden');
     $('#empty-tip').textContent = msg;
     $('#empty-tip').classList.remove('hidden');
   }
@@ -298,6 +355,7 @@
       }));
     }
     if (mediaItems.length) renderMediaGrid(sortItems(mediaItems, state.sortBy));
+    renderPagination();
   }
 
   function renderFolderCards(items, container) {
