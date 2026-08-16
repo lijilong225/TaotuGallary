@@ -610,6 +610,7 @@
     lbImg.style.height = '';
     lbImg.style.transform = '';
     $('#lb-zoom-toggle').title = '放大到原始大小';
+    $('#lb-zoom-ico').textContent = '+';
     navEl.classList.add('hidden');
   }
 
@@ -699,6 +700,7 @@
       state.zoomX = (stage.clientWidth - natW) / 2;
       state.zoomY = (stage.clientHeight - natH) / 2;
       $('#lb-zoom-toggle').title = '缩放适配屏幕';
+      $('#lb-zoom-ico').textContent = '−';
       $('#lb-nav-img').src = lbImg.src;
       navEl.classList.remove('hidden');
       clampZoom();
