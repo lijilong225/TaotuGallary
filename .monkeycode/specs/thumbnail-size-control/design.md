@@ -5,7 +5,7 @@ Updated: 2026-08-16
 
 ## Description
 
-浏览区图片宫格支持小、中、大三档缩略图尺寸：小 160px、中 240px、大 320px。默认中尺寸。切换控件为顶栏右上角三个并排按钮（小/中/大），当前尺寸高亮。各尺寸下通过后端生成对应宽度的缩略图，避免放大模糊。
+浏览区图片宫格支持小、中、大三档缩略图尺寸：小 160px、中 240px、大 320px。默认中尺寸。切换控件位于排序栏右侧，与排序控件同一行并排（小/中/大），当前尺寸高亮。各尺寸下通过后端生成对应宽度的缩略图，避免放大模糊。
 
 ## Architecture
 
@@ -31,19 +31,22 @@ graph TD
 
 ### 前端 `public/index.html`
 
-顶栏右侧按钮组（置于当前用户名与退出登录按钮之间）：
+排序栏右侧按钮组（与排序下拉框同一行）：
 
 ```html
-<div class="topbar-right">
+<div class="sortbar hidden" id="sortbar">
+  <label>排序：</label>
+  <select id="sort-by">...</select>
+  <select id="sort-order">...</select>
   <div id="thumb-size-group" class="thumb-size-group">
     <button data-size="s" class="thumb-size-btn" title="小尺寸">小</button>
     <button data-size="m" class="thumb-size-btn" title="中尺寸">中</button>
     <button data-size="l" class="thumb-size-btn" title="大尺寸">大</button>
   </div>
-  <span id="current-user" class="user"></span>
-  <button id="btn-logout" class="btn-ghost">退出登录</button>
 </div>
 ```
+
+`.thumb-size-group` 通过 `margin-left: auto` 靠右对齐，与排序控件位于同一行。
 
 ### 前端 `public/js/app.js`
 

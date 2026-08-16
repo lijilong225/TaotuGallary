@@ -217,6 +217,7 @@ body {
 .topbar-right { display: flex; align-items: center; gap: 14px; }
 
 .thumb-size-group {
+  margin-left: auto;
   display: flex;
   align-items: center;
   gap: 3px;
