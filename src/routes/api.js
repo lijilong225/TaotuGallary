@@ -6,6 +6,7 @@ const { config } = require('../config');
 const { verify } = require('../auth');
 const gallery = require('../gallery');
 const thumb = require('../thumbnail');
+const preferences = require('../preferences');
 const { mimeType, isImageFile, isArchiveFile, isVideoFile } = require('../utils');
 const logger = require('../logger');
 const { loginLimiter } = require('../middleware');
@@ -74,6 +75,21 @@ router.post('/login', [
 });
 
 // 修改密码端点已移除，账户密码由环境变量 ADMIN_USER / ADMIN_PASSWORD 设置
+
+router.get('/preferences', requireAuth, (req, res) => {
+  res.json(preferences.getPreferences(req.session.user));
+});
+
+router.put('/preferences', requireAuth, async (req, res, next) => {
+  const { layout } = req.body || {};
+  if (!preferences.VALID_LAYOUTS.includes(layout)) {
+    return res.status(400).json({ error: '非法的布局模式' });
+  }
+  try {
+    await preferences.setPreference(req.session.user, 'layout', layout);
+    res.json({ layout });
+  } catch (e) { next(e); }
+});
 
 router.post('/logout', (req, res) => {
   const user = req.session.user;

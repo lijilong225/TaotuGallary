@@ -4,6 +4,9 @@
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+  const LAYOUT_SIZES = { s: 160, m: 240, l: 320 };
+  const MASONRY_GAP = 18;
+
   const state = {
     user: null,
     tree: [],
@@ -17,6 +20,7 @@
     pageSize: 50,
     totalPages: 1,
     thumbSize: 'm',
+    layoutMode: 'grid',
     zoom: false,
     zoomX: 0,
     zoomY: 0,
@@ -50,13 +54,28 @@
     $('#username').focus();
   }
 
-  function showMain(user) {
+  async function showMain(user) {
     state.user = user;
     $('#login-view').classList.add('hidden');
     $('#main-view').classList.remove('hidden');
     $('#current-user').textContent = user;
     applyThumbSize();
+    await loadPreferences();
+    applyLayoutButton();
     loadTree();
+  }
+
+  async function loadPreferences() {
+    try {
+      const prefs = await api('/api/preferences');
+      state.layoutMode = prefs && prefs.layout === 'masonry' ? 'masonry' : 'grid';
+    } catch {
+      state.layoutMode = 'grid';
+    }
+  }
+
+  function applyLayoutButton() {
+    $('#layout-switch-btn').textContent = state.layoutMode === 'grid' ? '瀑布流' : '网格';
   }
 
   $('#login-form').addEventListener('submit', async (e) => {
@@ -106,6 +125,19 @@
       applyThumbSize();
       if (state.browseData) renderBrowse();
     });
+  });
+
+  /* ---------------- Layout mode ---------------- */
+  $('#layout-switch-btn').addEventListener('click', async () => {
+    state.layoutMode = state.layoutMode === 'grid' ? 'masonry' : 'grid';
+    applyLayoutButton();
+    try {
+      await api('/api/preferences', {
+        method: 'PUT',
+        body: JSON.stringify({ layout: state.layoutMode }),
+      });
+    } catch {}
+    if (state.browseData) renderBrowse();
   });
 
   /* ---------------- Tree ---------------- */
@@ -453,37 +485,73 @@
   }
 
   function renderMediaGrid(items) {
+    if (state.layoutMode === 'masonry') return renderMasonry(items);
+    renderGrid(items);
+  }
+
+  function renderGrid(items) {
     state.imageList = items;
     const grid = $('#image-grid');
+    grid.classList.remove('masonry');
     grid.dataset.size = state.thumbSize;
     grid.innerHTML = '';
+    items.forEach((item, idx) => grid.appendChild(createThumbBox(item, idx)));
+    lazyLoad();
+  }
+
+  function renderMasonry(items) {
+    state.imageList = items;
+    const grid = $('#image-grid');
+    grid.classList.add('masonry');
+    grid.dataset.size = state.thumbSize;
+    grid.innerHTML = '';
+    const width = grid.clientWidth || 800;
+    const size = LAYOUT_SIZES[state.thumbSize];
+    const gap = MASONRY_GAP;
+    const cols = Math.max(2, Math.min(8, Math.floor((width + gap) / (size + gap))));
+    const columns = [];
+    for (let i = 0; i < cols; i++) {
+      const col = document.createElement('div');
+      col.className = 'masonry-col';
+      columns.push(col);
+      grid.appendChild(col);
+    }
     items.forEach((item, idx) => {
-      const box = document.createElement('div');
-      box.className = 'thumb-box loading';
-      const img = document.createElement('img');
-      img.loading = 'lazy';
-      img.alt = item.name;
-      img.dataset.thumb = thumbUrl(item);
-      img.addEventListener('load', () => box.classList.remove('loading'));
-
-      const name = document.createElement('div');
-      name.className = 'thumb-name';
-      name.textContent = item.name;
-      box.appendChild(img);
-      box.appendChild(name);
-
-      if (item.mime === 'video') {
-        const badge = document.createElement('div');
-        badge.className = 'video-badge';
-        badge.innerHTML = '&#9658;';
-        box.appendChild(badge);
-        box.classList.add('video-box');
-      }
-
-      box.addEventListener('click', () => openLightbox(idx));
-      grid.appendChild(box);
+      const box = createThumbBox(item, idx);
+      if (state.layoutMode === 'masonry') box.style.aspectRatio = '1 / 1';
+      columns[idx % cols].appendChild(box);
     });
     lazyLoad();
+  }
+
+  function createThumbBox(item, idx) {
+    const box = document.createElement('div');
+    box.className = 'thumb-box loading';
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.alt = item.name;
+    img.dataset.thumb = thumbUrl(item);
+    img.addEventListener('load', () => {
+      box.classList.remove('loading');
+      box.style.aspectRatio = '';
+    });
+
+    const name = document.createElement('div');
+    name.className = 'thumb-name';
+    name.textContent = item.name;
+    box.appendChild(img);
+    box.appendChild(name);
+
+    if (item.mime === 'video') {
+      const badge = document.createElement('div');
+      badge.className = 'video-badge';
+      badge.innerHTML = '&#9658;';
+      box.appendChild(badge);
+      box.classList.add('video-box');
+    }
+
+    box.addEventListener('click', () => openLightbox(idx));
+    return box;
   }
 
   function lazyLoad() {

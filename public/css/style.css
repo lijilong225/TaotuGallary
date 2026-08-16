@@ -250,6 +250,24 @@ body {
   text-shadow: 0 1px 1px rgba(0,0,0,.3);
 }
 
+.layout-switch-btn {
+  margin-left: 8px;
+  min-width: 56px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  background: linear-gradient(180deg, #fdfdfa 0%, #deded6 100%);
+  border: 1px solid #a9a9a0;
+  border-radius: 7px;
+  box-shadow: 0 2px 0 #8f8f86, inset 0 1px 0 rgba(255,255,255,.9);
+  cursor: pointer;
+  transition: background .12s, color .12s, transform .12s;
+}
+
+.layout-switch-btn:hover { filter: brightness(1.03); }
+.layout-switch-btn:active { transform: translateY(1px); box-shadow: 0 1px 0 #8f8f86; }
+
 .user {
   color: #6b5a3c;
   font-size: 13px;
@@ -578,6 +596,29 @@ body {
 
 .image-grid[data-size="l"] {
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+}
+
+.image-grid.masonry {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.image-grid.masonry .masonry-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.image-grid.masonry .thumb-box {
+  aspect-ratio: auto;
+}
+
+.image-grid.masonry .thumb-box img {
+  height: auto;
+  object-fit: cover;
 }
 
 .thumb-box {
