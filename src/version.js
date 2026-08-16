@@ -1,20 +1,13 @@
-const { execSync } = require('child_process');
+const fs = require('fs');
 const path = require('path');
+
+const VERSION_FILE = path.resolve(__dirname, '..', 'version');
 
 let version = 'v0.0.0';
 
 try {
-  version = execSync('git describe --tags --always --abbrev=0', {
-    cwd: path.resolve(__dirname, '..'),
-    encoding: 'utf8',
-    timeout: 5000,
-  }).trim();
-  if (version && !version.startsWith('v')) version = 'v' + version;
-} catch {
-  try {
-    const pkg = require(path.join(__dirname, '..', 'package.json'));
-    if (pkg.version) version = 'v' + pkg.version;
-  } catch {}
-}
+  const raw = fs.readFileSync(VERSION_FILE, 'utf8').trim();
+  if (raw) version = raw.startsWith('v') ? raw : 'v' + raw;
+} catch {}
 
 module.exports = version;

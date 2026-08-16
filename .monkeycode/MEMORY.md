@@ -37,3 +37,13 @@ Entries discovered by the Agent during task execution should follow this format:
 - Instructions:
   - 每次完成代码修改后，自动执行 git add + git commit + git push，同步提交到远程 GitHub 仓库（无需用户手动要求）
   - 用户明确要求暂不提交时，保持改动为未提交状态
+
+[Version File Workflow]
+- Date: 2026-08-16
+- Context: 用户要求新增 version 文件存储版本号，每次提交前递增
+- Category: Workflow & Collaboration
+- Instructions:
+  - 项目根目录 `version` 文件存储当前版本号（如 `1.1.0`），不包含 `v` 前缀
+  - 每次代码提交前，先将 `version` 文件中的版本号递增（patch 递增，即 `1.1.0` → `1.1.1`）
+  - 版本号递增后，再执行 git add / commit / push
+  - 登录页和主页显示的版本号来自 `version` 文件
