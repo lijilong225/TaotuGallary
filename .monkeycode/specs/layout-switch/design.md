@@ -26,6 +26,10 @@ graph LR
 
 ### 服务端
 
+- `src/thumbnail.js`：
+  - `generateThumbFromVideo` 由固定尺寸 `pad` 黑边改为 `probeVideoSize` 探测原始宽高后按比例 `scale`，输出无黑边、最长边不超过 `width` 的缩略图
+  - `getThumbForFile` / `getThumbForArchiveEntry` 对视频探测原始宽高，并将其并入缓存键（`dimSig`），使旧正方形缓存自动失效
+  - 新增 `probeVideoSize`（ffprobe 读取宽高）与 `fitInside`（等比缩放、偶数化、最长边限制）
 - `src/preferences.js`：用户偏好存储模块
   - `getPreferences(username)`: 返回 `{ layout: 'grid' | 'masonry' }`，无记录时返回默认 `{ layout: 'grid' }`
   - `setPreference(username, key, value)`: 写入单键偏好，落盘 `data/preferences.json`
