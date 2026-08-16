@@ -6,6 +6,7 @@ const { config } = require('../config');
 const { verify } = require('../auth');
 const gallery = require('../gallery');
 const thumb = require('../thumbnail');
+const favorites = require('../favorites');
 const preferences = require('../preferences');
 const { mimeType, isImageFile, isArchiveFile, isVideoFile } = require('../utils');
 const logger = require('../logger');
@@ -131,6 +132,17 @@ router.get('/archive-images', requireAuth, async (req, res, next) => {
     const sortBy = req.query.sortBy === 'time' ? 'time' : 'name';
     const sortOrder = req.query.sortOrder === 'desc' ? 'desc' : 'asc';
     res.json(await gallery.listArchiveMedia(p, sortBy, sortOrder));
+  } catch (e) { next(e); }
+});
+
+router.get('/favorites', requireAuth, (req, res) => {
+  res.json({ favorites: favorites.listFavorites(req.session.user) });
+});
+
+router.post('/favorites/toggle', requireAuth, (req, res, next) => {
+  try {
+    const result = favorites.toggleFavorite(req.session.user, req.body);
+    res.json(result);
   } catch (e) { next(e); }
 });
 

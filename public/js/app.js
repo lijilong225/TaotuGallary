@@ -24,7 +24,69 @@
     zoom: false,
     zoomX: 0,
     zoomY: 0,
+    favorites: {},
   };
+
+  function favKey(item) {
+    return item.entry ? item.path + '|' + item.entry : item.path;
+  }
+
+  function isFavored(key) {
+    return !!state.favorites[key];
+  }
+
+  async function loadFavorites() {
+    try {
+      const data = await api('/api/favorites');
+      state.favorites = {};
+      (data.favorites || []).forEach(f => {
+        state.favorites[f.entry ? f.path + '|' + f.entry : f.path] = f;
+      });
+    } catch (e) {
+      console.error('加载收藏失败', e);
+    }
+    updateFavUI(null, '');
+  }
+
+  async function toggleFav(item, el) {
+    const key = favKey(item);
+    try {
+      const data = await api('/api/favorites/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          path: item.path,
+          entry: item.entry || null,
+          name: item.name,
+          mime: item.mime,
+          mtime: item.mtime || null,
+        }),
+      });
+      if (data.favorited) {
+        state.favorites[key] = item;
+      } else {
+        delete state.favorites[key];
+      }
+      updateFavUI(el, key);
+    } catch (e) {
+      console.error('收藏失败', e);
+    }
+  }
+
+  function updateFavUI(el, key) {
+    if (el) {
+      const on = isFavored(key);
+      el.innerHTML = on ? '&#9829;' : '&#9825;';
+      el.classList.toggle('fav-on', on);
+    }
+    $$('#image-grid .fav-btn').forEach(btn => {
+      const k = btn.dataset.favKey;
+      const on = isFavored(k);
+      btn.innerHTML = on ? '&#9829;' : '&#9825;';
+      btn.classList.toggle('fav-on', on);
+    });
+    updateLightboxFav();
+  }
 
   async function api(path, options = {}) {
     const opts = {
@@ -61,6 +123,7 @@
     $('#current-user').textContent = user;
     applyThumbSize();
     loadTree();
+    loadFavorites();
   }
 
   $('#login-form').addEventListener('submit', async (e) => {
@@ -554,6 +617,21 @@ function applyThumbSize() {
     box.appendChild(img);
     box.appendChild(name);
 
+    const fav = document.createElement('button');
+    fav.className = 'fav-btn';
+    fav.title = '收藏';
+    fav.innerHTML = '&#9825;';
+    fav.dataset.favKey = favKey(item);
+    if (isFavored(fav.dataset.favKey)) {
+      fav.innerHTML = '&#9829;';
+      fav.classList.add('fav-on');
+    }
+    fav.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleFav(item, fav);
+    });
+    box.appendChild(fav);
+
     if (item.mime === 'video') {
       const badge = document.createElement('div');
       badge.className = 'video-badge';
@@ -630,6 +708,7 @@ function applyThumbSize() {
     }
     resetZoom();
     if (!isInfoPanelHidden()) renderInfoPanel();
+    updateLightboxFav();
   }
 
   function downloadCurrent() {
@@ -642,6 +721,22 @@ function applyThumbSize() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+  }
+
+  function updateLightboxFav() {
+    const item = state.imageList && state.imageList[state.lbIndex];
+    const btn = $('#lb-fav');
+    if (!item) return;
+    const key = favKey(item);
+    const on = isFavored(key);
+    btn.innerHTML = on ? '&#9829;' : '&#9825;';
+    btn.classList.toggle('fav-on', on);
+  }
+
+  function toggleLightboxFav() {
+    const item = state.imageList && state.imageList[state.lbIndex];
+    if (!item) return;
+    toggleFav(item, null);
   }
 
   function stopVideo() {
@@ -775,6 +870,7 @@ function applyThumbSize() {
   $('#lb-prev').addEventListener('click', prevImage);
   $('#lb-info-toggle').addEventListener('click', toggleInfoPanel);
   $('#lb-download').addEventListener('click', downloadCurrent);
+  $('#lb-fav').addEventListener('click', toggleLightboxFav);
 
   /* ---------------- Zoom & pan ---------------- */
   const lbImg = $('#lb-img');

@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.12",
+    "better-sqlite3": "^13.0.3",
     "express": "^4.19.2",
     "express-rate-limit": "^7.1.5",
     "express-session": "^1.18.0",
