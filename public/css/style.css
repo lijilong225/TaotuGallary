@@ -615,8 +615,9 @@ html, body {
 }
 
 .lb-close { left: 16px; }
-.lb-info-toggle { right: 16px; }
-.lb-zoom-toggle { right: 66px; }
+.lb-download { right: 16px; }
+.lb-info-toggle { right: 66px; }
+.lb-zoom-toggle { right: 116px; }
 .lb-zoom-toggle #lb-zoom-ico { font-size: 24px; line-height: 1; }
 
 .lb-corner-btn:hover { background: rgba(0,0,0,.85); }

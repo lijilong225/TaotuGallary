@@ -447,6 +447,7 @@
       $('#lb-img').classList.add('hidden');
       $('#lb-video-wrap').classList.remove('hidden');
       $('#lb-zoom-toggle').classList.add('hidden');
+      $('#lb-download').classList.add('hidden');
       const video = $('#lb-video');
       stopVideo();
       video.src = videoUrl(item);
@@ -457,15 +458,27 @@
       $('#lb-video-wrap').classList.add('hidden');
       $('#lb-img').classList.remove('hidden');
       $('#lb-zoom-toggle').classList.remove('hidden');
+      $('#lb-download').classList.remove('hidden');
       $('#lb-img').src = rawUrl(item);
     }
     resetZoom();
     if (!isInfoPanelHidden()) renderInfoPanel();
   }
 
+  function downloadCurrent() {
+    const item = state.imageList[state.lbIndex];
+    if (!item || item.mime === 'video') return;
+    const url = rawUrl(item);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = item.name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   function stopVideo() {
-    const video = $('#lb-video');
-    try {
+    const video = $('#lb-video');    try {
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
@@ -594,6 +607,7 @@
   $('#lb-next').addEventListener('click', nextImage);
   $('#lb-prev').addEventListener('click', prevImage);
   $('#lb-info-toggle').addEventListener('click', toggleInfoPanel);
+  $('#lb-download').addEventListener('click', downloadCurrent);
 
   /* ---------------- Zoom & pan ---------------- */
   const lbImg = $('#lb-img');
