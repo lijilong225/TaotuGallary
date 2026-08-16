@@ -552,6 +552,33 @@ html, body {
   pointer-events: auto;
 }
 
+.lb-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  width: 46px;
+  height: 60px;
+  background: rgba(0,0,0,.55);
+  color: #fff;
+  font-size: 26px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+}
+
+#lb-prev { left: 0; }
+#lb-next { right: 0; }
+
+.lb-nav:hover { background: rgba(0,0,0,.8); }
+
+#lightbox:fullscreen .lb-nav {
+  display: flex;
+}
+
 .lb-btn {
   width: 40px;
   height: 40px;
