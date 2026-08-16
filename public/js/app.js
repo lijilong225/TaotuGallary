@@ -16,6 +16,7 @@
     browseData: null,
     sortBy: 'time',
     sortOrder: 'desc',
+    timeGroup: 'day',
     pageNum: 1,
     pageSize: 50,
     totalPages: 1,
@@ -102,11 +103,17 @@
   /* ---------------- Sorting ---------------- */
   $('#sort-by').addEventListener('change', (e) => {
     state.sortBy = e.target.value;
+    $('#time-group').classList.toggle('hidden', state.sortBy !== 'time');
     if (state.browseData) renderBrowse();
   });
 
   $('#sort-order').addEventListener('change', (e) => {
     state.sortOrder = e.target.value;
+    if (state.browseData) renderBrowse();
+  });
+
+  $('#time-group').addEventListener('change', (e) => {
+    state.timeGroup = e.target.value;
     if (state.browseData) renderBrowse();
   });
 
@@ -484,9 +491,68 @@
     return `/api/video?path=${p}`;
   }
 
+  function groupByTime(items, level) {
+    const groups = {};
+    items.forEach(item => {
+      const d = new Date(item.mtime);
+      let key;
+      if (level === 'year') {
+        key = String(d.getFullYear());
+      } else if (level === 'month') {
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      } else {
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    const keys = Object.keys(groups).sort();
+    if (state.sortOrder === 'desc') keys.reverse();
+    return keys.map(k => ({ key: k, items: groups[k] }));
+  }
+
+  function formatTimeHeader(mtime, level) {
+    const d = new Date(mtime);
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    if (level === 'year') return `${d.getFullYear()}年`;
+    if (level === 'month') return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+    const today = new Date();
+    const dayStr = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+    if (d.toDateString() === today.toDateString()) return `今天 · ${dayStr} 星期${weekdays[d.getDay()]}`;
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return `昨天 · ${dayStr} 星期${weekdays[d.getDay()]}`;
+    return `${dayStr} 星期${weekdays[d.getDay()]}`;
+  }
+
   function renderMediaGrid(items) {
+    state.imageList = items;
+    if (state.sortBy === 'time') return renderTimeline(items);
     if (state.layoutMode === 'masonry') return renderMasonry(items);
     renderGrid(items);
+  }
+
+  function renderTimeline(items) {
+    const groups = groupByTime(items, state.timeGroup);
+    const grid = $('#image-grid');
+    grid.innerHTML = '';
+    grid.classList.remove('masonry');
+    grid.dataset.size = state.thumbSize;
+    let globalIdx = 0;
+    groups.forEach(group => {
+      const header = document.createElement('div');
+      header.className = 'timeline-header';
+      header.innerHTML = `<span class="th-date">${formatTimeHeader(group.items[0].mtime, state.timeGroup)}</span><span class="th-count">${group.items.length} 个文件</span><span class="th-line"></span>`;
+      grid.appendChild(header);
+      const row = document.createElement('div');
+      row.className = 'timeline-row';
+      row.dataset.size = state.thumbSize;
+      group.items.forEach(item => {
+        row.appendChild(createThumbBox(item, globalIdx++));
+      });
+      grid.appendChild(row);
+    });
+    lazyLoad();
   }
 
   function renderGrid(items) {

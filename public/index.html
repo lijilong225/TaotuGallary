@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/css/style.css?v=20260816f">
+  <link rel="stylesheet" href="/css/style.css?v=20260816g">
 </head>
 <body>
   <div id="login-view" class="login-view hidden">
@@ -51,6 +51,11 @@
           <select id="sort-order">
             <option value="desc" selected>倒序</option>
             <option value="asc">正序</option>
+          </select>
+          <select id="time-group" class="time-group">
+            <option value="day" selected>按天</option>
+            <option value="month">按月</option>
+            <option value="year">按年</option>
           </select>
           <div id="thumb-size-group" class="thumb-size-group">
             <button type="button" data-size="s" class="thumb-size-btn" title="小尺寸">小</button>
@@ -108,6 +113,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20260816f"></script>
+  <script src="/js/app.js?v=20260816g"></script>
 </body>
 </html>
