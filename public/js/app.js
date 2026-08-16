@@ -216,6 +216,27 @@
     }
   }
 
+/* ---------------- Account page ---------------- */
+  $('#current-user').addEventListener('click', openAccount);
+
+  function openAccount() {
+    const user = state.user || '';
+    $('#account-username').textContent = user;
+    const avatar = $('#account-view .account-avatar');
+    if (avatar) avatar.textContent = (user.charAt(0) || 'A').toUpperCase();
+    $('#main-view').classList.add('hidden');
+    $('#account-view').classList.remove('hidden');
+    $('#lightbox').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  function closeAccount() {
+    $('#account-view').classList.add('hidden');
+    $('#main-view').classList.remove('hidden');
+  }
+
+  $('#account-back').addEventListener('click', closeAccount);
+
 function applyThumbSize() {
     const grid = $('#image-grid');
     if (grid) grid.dataset.size = state.thumbSize;

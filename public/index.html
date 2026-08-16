@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/css/style.css?v=20260816t">
-  <script src="/js/icons.js?v=20260816t"></script>
+  <link rel="stylesheet" href="/css/style.css?v=20260816u">
+  <script src="/js/icons.js?v=20260816u"></script>
 </head>
 <body>
   <div id="login-view" class="login-view hidden">
@@ -31,7 +31,7 @@
       <div class="brand">套图管理器</div>
       <div class="topbar-right">
         <button id="btn-favorites" class="btn-ghost">进入收藏</button>
-        <span id="current-user" class="user"></span>
+        <button id="current-user" class="user user-btn"></button>
         <button id="btn-logout" class="btn-ghost">退出登录</button>
       </div>
     </header>
@@ -88,6 +88,19 @@
     </div>
   </div>
 
+  <div id="account-view" class="favorites-view hidden">
+    <header class="fav-topbar">
+      <button id="account-back" class="btn-ghost" data-icon="back"></button>
+      <span class="fav-title">账户详情</span>
+    </header>
+    <div class="fav-body">
+      <div class="account-info">
+        <div class="account-avatar">A</div>
+        <div class="account-username" id="account-username"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="lightbox" class="lightbox hidden">
     <div class="lightbox-stage">
       <img id="lb-img" alt="">
@@ -127,6 +140,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20260816t"></script>
+  <script src="/js/app.js?v=20260816u"></script>
 </body>
 </html>

@@ -257,6 +257,18 @@ body {
   text-shadow: 0 1px 0 rgba(255,255,255,.7);
 }
 
+.user-btn {
+  padding: 7px 16px;
+  background: linear-gradient(180deg, #fdfdfa 0%, #deded6 100%);
+  border: 1px solid #a9a9a0;
+  border-radius: 7px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 #8f8f86, inset 0 1px 0 rgba(255,255,255,.9);
+  transition: filter .15s;
+}
+.user-btn:hover { filter: brightness(1.04); }
+.user-btn:active { transform: translateY(2px); box-shadow: 0 0 0 #8f8f86, inset 0 2px 4px rgba(0,0,0,.22); }
+
 .btn-ghost {
   padding: 7px 16px;
   font-size: 13px;
@@ -334,6 +346,39 @@ body {
 
 #fav-grid.fav-grid {
   min-height: 200px;
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 60px 20px;
+}
+
+.account-avatar {
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 44px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(180deg, #9cc270 0%, #6d9c43 55%, #558030 100%);
+  border: 3px solid rgba(255,255,255,.35);
+  border-radius: 50%;
+  box-shadow:
+    0 4px 10px rgba(60,45,20,.35),
+    inset 0 2px 4px rgba(255,255,255,.3);
+  text-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+
+.account-username {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
 }
 
 /* =========================================================
