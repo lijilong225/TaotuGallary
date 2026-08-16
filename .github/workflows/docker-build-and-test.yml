@@ -49,15 +49,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build image
-        run: docker build -t gallery-manager:ci .
+      - name: Build image (amd64)
+        run: docker buildx build --platform linux/amd64 -t gallery-manager:ci --load .
 
       - name: Prepare gallery dir
         run: mkdir -p gallery
 
       - name: Run container
         run: |
-          docker run -d --rm --name gallery-manager-test -p 8080:8080 \
+          docker run -d --rm --platform linux/amd64 --name gallery-manager-test -p 8080:8080 \
             -v "$GITHUB_WORKSPACE/gallery":/gallery \
             -v gallery-data:/app/data \
             gallery-manager:ci
@@ -94,6 +94,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v6
         with:
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_LOWER }}:ci
