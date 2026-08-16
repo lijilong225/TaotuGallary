@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/css/style.css?v=20260816r">
-  <script src="/js/icons.js?v=20260816r"></script>
+  <link rel="stylesheet" href="/css/style.css?v=20260816t">
+  <script src="/js/icons.js?v=20260816t"></script>
 </head>
 <body>
   <div id="login-view" class="login-view hidden">
@@ -30,6 +30,7 @@
     <header class="topbar">
       <div class="brand">套图管理器</div>
       <div class="topbar-right">
+        <button id="btn-favorites" class="btn-ghost">进入收藏</button>
         <span id="current-user" class="user"></span>
         <button id="btn-logout" class="btn-ghost">退出登录</button>
       </div>
@@ -75,6 +76,18 @@
     </div>
   </div>
 
+  <div id="favorites-view" class="favorites-view hidden">
+    <header class="fav-topbar">
+      <button id="fav-back" class="btn-ghost" data-icon="back"></button>
+      <span class="fav-title">我的收藏</span>
+      <span id="fav-count" class="fav-count"></span>
+    </header>
+    <div class="fav-body">
+      <div id="fav-empty" class="empty hidden">暂无收藏</div>
+      <div id="fav-grid" class="image-grid masonry"></div>
+    </div>
+  </div>
+
   <div id="lightbox" class="lightbox hidden">
     <div class="lightbox-stage">
       <img id="lb-img" alt="">
@@ -114,6 +127,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20260816r"></script>
+  <script src="/js/app.js?v=20260816t"></script>
 </body>
 </html>

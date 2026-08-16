@@ -43,6 +43,7 @@ function listFavorites(username) {
     mime: r.mime,
     mtime: r.mtime || null,
     addedAt: r.added_at,
+    type: r.entry ? 'archive' : 'file',
   }));
 }
 
