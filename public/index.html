@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/css/style.css?v=20260815d">
+  <link rel="stylesheet" href="/css/style.css?v=20260815e">
 </head>
 <body>
   <div id="login-view" class="login-view hidden">
@@ -82,9 +82,14 @@
     </div>
     <button id="lb-close" class="lb-corner-btn lb-close" title="返回">&#8592;</button>
     <span id="lb-counter" class="lb-counter"></span>
+    <button id="lb-zoom-toggle" class="lb-corner-btn lb-zoom-toggle" title="放大到原始大小">&#128269;</button>
     <button id="lb-info-toggle" class="lb-corner-btn lb-info-toggle" title="详情">&#8505;</button>
     <button id="lb-prev" class="lb-nav" title="上一个">&#10094;</button>
     <button id="lb-next" class="lb-nav" title="下一个">&#10095;</button>
+    <div id="lb-navigator" class="lb-navigator hidden">
+      <img id="lb-nav-img" alt="">
+      <div id="lb-nav-viewport" class="lb-nav-viewport"></div>
+    </div>
     <div id="lb-info-panel" class="lb-info-panel hidden">
       <div class="lb-info-title">图片信息</div>
       <div id="lb-info-body" class="lb-info-body">
@@ -95,6 +100,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20260815d"></script>
+  <script src="/js/app.js?v=20260815e"></script>
 </body>
 </html>

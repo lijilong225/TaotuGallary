@@ -13,6 +13,9 @@
     browseData: null,
     sortBy: 'name',
     sortOrder: 'asc',
+    zoom: false,
+    zoomX: 0,
+    zoomY: 0,
   };
 
   async function api(path, options = {}) {
@@ -422,6 +425,7 @@
     $('#lightbox').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     hideInfoPanel();
+    resetZoom();
     updateLightbox();
   }
 
@@ -431,6 +435,7 @@
     $('#lb-img').src = '';
     document.body.style.overflow = '';
     hideInfoPanel();
+    resetZoom();
   }
 
   function updateLightbox() {
@@ -441,6 +446,7 @@
     if (item.mime === 'video') {
       $('#lb-img').classList.add('hidden');
       $('#lb-video-wrap').classList.remove('hidden');
+      $('#lb-zoom-toggle').classList.add('hidden');
       const video = $('#lb-video');
       stopVideo();
       video.src = videoUrl(item);
@@ -450,8 +456,10 @@
       stopVideo();
       $('#lb-video-wrap').classList.add('hidden');
       $('#lb-img').classList.remove('hidden');
+      $('#lb-zoom-toggle').classList.remove('hidden');
       $('#lb-img').src = rawUrl(item);
     }
+    resetZoom();
     if (!isInfoPanelHidden()) renderInfoPanel();
   }
 
@@ -586,6 +594,169 @@
   $('#lb-next').addEventListener('click', nextImage);
   $('#lb-prev').addEventListener('click', prevImage);
   $('#lb-info-toggle').addEventListener('click', toggleInfoPanel);
+
+  /* ---------------- Zoom & pan ---------------- */
+  const lbImg = $('#lb-img');
+  const navEl = $('#lb-navigator');
+  let zoomDrag = null;
+  let navDrag = null;
+
+  function resetZoom() {
+    state.zoom = false;
+    state.zoomX = 0;
+    state.zoomY = 0;
+    lbImg.classList.remove('zoomed', 'dragging');
+    lbImg.style.width = '';
+    lbImg.style.height = '';
+    lbImg.style.transform = '';
+    $('#lb-zoom-toggle').title = '放大到原始大小';
+    navEl.classList.add('hidden');
+  }
+
+  function clampZoom() {
+    const stage = $('.lightbox-stage');
+    const natW = lbImg.naturalWidth;
+    const natH = lbImg.naturalHeight;
+    const stageW = stage.clientWidth;
+    const stageH = stage.clientHeight;
+    if (natW <= stageW) state.zoomX = (stageW - natW) / 2;
+    else state.zoomX = Math.max(Math.min(0, stageW - natW), Math.min(0, state.zoomX));
+    if (natH <= stageH) state.zoomY = (stageH - natH) / 2;
+    else state.zoomY = Math.max(Math.min(0, stageH - natH), Math.min(0, state.zoomY));
+  }
+
+  function applyZoom() {
+    lbImg.style.transform = `translate(${state.zoomX}px, ${state.zoomY}px)`;
+    renderNavigator();
+  }
+
+  function renderNavigator() {
+    const stage = $('.lightbox-stage');
+    const navW = navEl.clientWidth;
+    const navH = navEl.clientHeight;
+    const natW = lbImg.naturalWidth;
+    const natH = lbImg.naturalHeight;
+    if (!natW || !natH) return;
+    const scale = Math.min(navW / natW, navH / natH);
+    const rW = natW * scale;
+    const rH = natH * scale;
+    const ox = (navW - rW) / 2;
+    const oy = (navH - rH) / 2;
+    const navImg = $('#lb-nav-img');
+    navImg.style.width = `${rW}px`;
+    navImg.style.height = `${rH}px`;
+    navImg.style.left = `${ox}px`;
+    navImg.style.top = `${oy}px`;
+    const stageW = stage.clientWidth;
+    const stageH = stage.clientHeight;
+    let vx = ox + (-state.zoomX) * scale;
+    let vy = oy + (-state.zoomY) * scale;
+    let vw = stageW * scale;
+    let vh = stageH * scale;
+    vw = Math.min(vw, rW);
+    vh = Math.min(vh, rH);
+    vx = Math.max(ox, Math.min(vx, ox + rW - vw));
+    vy = Math.max(oy, Math.min(vy, oy + rH - vh));
+    const vp = $('#lb-nav-viewport');
+    vp.style.left = `${vx}px`;
+    vp.style.top = `${vy}px`;
+    vp.style.width = `${vw}px`;
+    vp.style.height = `${vh}px`;
+  }
+
+  function jumpToView(clientX, clientY) {
+    const rect = navEl.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const navW = navEl.clientWidth;
+    const navH = navEl.clientHeight;
+    const natW = lbImg.naturalWidth;
+    const natH = lbImg.naturalHeight;
+    const scale = Math.min(navW / natW, navH / natH);
+    const rW = natW * scale;
+    const rH = natH * scale;
+    const ox = (navW - rW) / 2;
+    const oy = (navH - rH) / 2;
+    const imgX = (x - ox) / scale;
+    const imgY = (y - oy) / scale;
+    const stage = $('.lightbox-stage');
+    state.zoomX = stage.clientWidth / 2 - imgX;
+    state.zoomY = stage.clientHeight / 2 - imgY;
+    clampZoom();
+    applyZoom();
+  }
+
+  function toggleZoom() {
+    if (!state.zoom) {
+      const natW = lbImg.naturalWidth;
+      const natH = lbImg.naturalHeight;
+      if (!natW || !natH) return;
+      state.zoom = true;
+      lbImg.classList.add('zoomed');
+      lbImg.style.width = `${natW}px`;
+      lbImg.style.height = `${natH}px`;
+      const stage = $('.lightbox-stage');
+      state.zoomX = (stage.clientWidth - natW) / 2;
+      state.zoomY = (stage.clientHeight - natH) / 2;
+      $('#lb-zoom-toggle').title = '缩放适配屏幕';
+      $('#lb-nav-img').src = lbImg.src;
+      navEl.classList.remove('hidden');
+      clampZoom();
+      applyZoom();
+    } else {
+      resetZoom();
+    }
+  }
+
+  $('#lb-zoom-toggle').addEventListener('click', toggleZoom);
+
+  lbImg.addEventListener('pointerdown', (e) => {
+    if (!state.zoom) return;
+    e.preventDefault();
+    zoomDrag = { x: e.clientX, y: e.clientY, ox: state.zoomX, oy: state.zoomY };
+    lbImg.classList.add('dragging');
+    lbImg.setPointerCapture(e.pointerId);
+  });
+
+  lbImg.addEventListener('pointermove', (e) => {
+    if (!zoomDrag) return;
+    state.zoomX = zoomDrag.ox + (e.clientX - zoomDrag.x);
+    state.zoomY = zoomDrag.oy + (e.clientY - zoomDrag.y);
+    clampZoom();
+    applyZoom();
+  });
+
+  lbImg.addEventListener('pointerup', () => {
+    zoomDrag = null;
+    lbImg.classList.remove('dragging');
+  });
+
+  lbImg.addEventListener('pointercancel', () => {
+    zoomDrag = null;
+    lbImg.classList.remove('dragging');
+  });
+
+  navEl.addEventListener('pointerdown', (e) => {
+    if (!state.zoom) return;
+    e.preventDefault();
+    navDrag = e.pointerId;
+    navEl.setPointerCapture(e.pointerId);
+    jumpToView(e.clientX, e.clientY);
+  });
+
+  navEl.addEventListener('pointermove', (e) => {
+    if (navDrag === null) return;
+    jumpToView(e.clientX, e.clientY);
+  });
+
+  navEl.addEventListener('pointerup', () => { navDrag = null; });
+  navEl.addEventListener('pointercancel', () => { navDrag = null; });
+
+  window.addEventListener('resize', () => {
+    if (!state.zoom) return;
+    clampZoom();
+    applyZoom();
+  });
 
   /* ---------------- Video controls ---------------- */
   const video = $('#lb-video');

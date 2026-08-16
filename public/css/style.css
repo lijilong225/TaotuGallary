@@ -429,6 +429,48 @@ html, body {
   object-fit: contain;
 }
 
+#lb-img.zoomed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  max-height: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+#lb-img.zoomed.dragging { cursor: grabbing; }
+
+.lb-navigator {
+  position: absolute;
+  top: 66px;
+  right: 16px;
+  width: 180px;
+  height: 135px;
+  background: rgba(0,0,0,.75);
+  border: 1px solid rgba(255,255,255,.3);
+  z-index: 35;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+#lb-nav-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  max-height: none;
+  pointer-events: none;
+}
+
+.lb-nav-viewport {
+  position: absolute;
+  border: 1px solid #ffd700;
+  background: rgba(255,215,0,.15);
+  pointer-events: none;
+}
+
 /* ---------- Video player ---------- */
 .video-wrap {
   position: relative;
@@ -574,6 +616,7 @@ html, body {
 
 .lb-close { left: 16px; }
 .lb-info-toggle { right: 16px; }
+.lb-zoom-toggle { right: 66px; }
 
 .lb-corner-btn:hover { background: rgba(0,0,0,.85); }
 
