@@ -1,12 +1,17 @@
-FROM node:22-alpine
-
-RUN apk add --no-cache libarchive-tools ffmpeg
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev && npm cache clean --force
 
+FROM node:22-alpine
+
+RUN apk add --no-cache libarchive-tools ffmpeg
+
+WORKDIR /app
+
+COPY --from=builder /app/node_modules ./node_modules
 COPY . .
 
 ENV NODE_ENV=production

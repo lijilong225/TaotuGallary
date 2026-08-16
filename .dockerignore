@@ -1,5 +1,15 @@
 node_modules/
 data/
 gallery/
+.git/
+.github/
+scripts/
 *.log
 .DS_Store
+README.md
+CHANGELOG.md
+SECURITY.md
+IMPLEMENTATION_REPORT.md
+.env
+.env.example
+docker-compose.yml
