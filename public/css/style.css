@@ -860,6 +860,19 @@ body {
 #lightbox:fullscreen .video-controls { opacity: 0; pointer-events: none; }
 #lightbox:fullscreen .video-controls.show { opacity: 1; pointer-events: auto; }
 
+/* 全屏播放时隐藏所有 Overlay 按钮 */
+#lightbox.hide-overlays .lb-close,
+#lightbox.hide-overlays .lb-counter,
+#lightbox.hide-overlays .lb-nav,
+#lightbox.hide-overlays .lb-zoom-toggle,
+#lightbox.hide-overlays .lb-download,
+#lightbox.hide-overlays .lb-info-toggle,
+#lightbox.hide-overlays .lb-navigator {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity .2s;
+}
+
 .vc-btn {
   width: 34px;
   height: 34px;

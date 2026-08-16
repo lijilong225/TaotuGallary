@@ -949,10 +949,12 @@ function applyThumbSize() {
 
   function showVideoControls() {
     videoWrap.querySelector('.video-controls').classList.add('show');
+    $('#lightbox').classList.remove('hide-overlays');
   }
 
   function hideVideoControls() {
     videoWrap.querySelector('.video-controls').classList.remove('show');
+    if (document.fullscreenElement) $('#lightbox').classList.add('hide-overlays');
   }
 
   function resetVideoControlsTimer() {
