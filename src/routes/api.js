@@ -28,14 +28,12 @@ function requireAuth(req, res, next) {
 }
 
 function sendFile(res, filePath, fallbackMime) {
-  const stat = fs.statSync(filePath);
   res.setHeader('Content-Type', fallbackMime || mimeType(filePath));
-  res.setHeader('Content-Length', stat.size);
   res.sendFile(path.resolve(filePath));
 }
 
-function sendRawImage(res, filePath, userPath) {
-  const stat = fs.statSync(filePath);
+async function sendRawImage(res, filePath, userPath) {
+  const stat = await fs.promises.stat(filePath);
   res.setHeader('Content-Type', mimeType(userPath || filePath));
   res.setHeader('Content-Length', stat.size);
   res.setHeader('Cache-Control', 'private, max-age=86400');
@@ -141,9 +139,8 @@ router.get('/thumb', requireAuth, async (req, res, next) => {
     const p = req.query.path || '';
     const entry = req.query.entry;
     const filePath = gallery.safeResolve(p);
-    if (!gallery.exists(filePath)) throw new Error('file not found');
-
-    const stat = fs.statSync(filePath);
+    const stat = await fs.promises.stat(filePath).catch(() => null);
+    if (!stat) throw new Error('file not found');
     if (stat.isDirectory()) return res.status(400).json({ error: '不能为目录生成缩略图' });
 
     const width = THUMB_SIZES[req.query.size] || undefined;
@@ -165,9 +162,8 @@ router.get('/image', requireAuth, async (req, res, next) => {
     const p = req.query.path || '';
     const entry = req.query.entry;
     const filePath = gallery.safeResolve(p);
-    if (!gallery.exists(filePath)) throw new Error('file not found');
-
-    const stat = fs.statSync(filePath);
+    const stat = await fs.promises.stat(filePath).catch(() => null);
+    if (!stat) throw new Error('file not found');
     if (stat.isDirectory()) return res.status(400).json({ error: '不能读取目录' });
 
     if (isArchiveFile(filePath)) {
@@ -180,12 +176,18 @@ router.get('/image', requireAuth, async (req, res, next) => {
     }
 
     if (!isImageFile(filePath)) return res.status(400).json({ error: '不支持的文件类型' });
-    sendRawImage(res, filePath, filePath);
+    await sendRawImage(res, filePath, filePath);
   } catch (e) { next(e); }
 });
 
-function sendVideoStream(req, res, filePath) {
-  const stat = fs.statSync(filePath);
+async function sendVideoStream(req, res, filePath) {
+  let stat;
+  try {
+    stat = await fs.promises.stat(filePath);
+  } catch {
+    res.status(404).end();
+    return;
+  }
   const total = stat.size;
   const range = req.headers.range;
   const type = mimeType(filePath);
@@ -221,21 +223,20 @@ router.get('/video', requireAuth, async (req, res, next) => {
     const p = req.query.path || '';
     const entry = req.query.entry;
     const filePath = gallery.safeResolve(p);
-    if (!gallery.exists(filePath)) throw new Error('file not found');
-
-    const stat = fs.statSync(filePath);
+    const stat = await fs.promises.stat(filePath).catch(() => null);
+    if (!stat) throw new Error('file not found');
     if (stat.isDirectory()) return res.status(400).json({ error: '不能播放目录' });
 
     if (isArchiveFile(filePath)) {
       if (!entry) return res.status(400).json({ error: '缺少 entry 参数' });
       if (!isVideoFile(entry)) return res.status(400).json({ error: '压缩包内该条目不是视频' });
       const cached = await thumb.extractVideoToCache(filePath, entry);
-      sendVideoStream(req, res, cached);
+      await sendVideoStream(req, res, cached);
       return;
     }
 
     if (!isVideoFile(filePath)) return res.status(400).json({ error: '不支持的文件类型' });
-    sendVideoStream(req, res, filePath);
+    await sendVideoStream(req, res, filePath);
   } catch (e) { next(e); }
 });
 

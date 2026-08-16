@@ -151,6 +151,8 @@ function applyThumbSize() {
     label.textContent = node.name;
     item.appendChild(label);
 
+    item.dataset.rel = node.rel;
+
     item.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (node.type === 'dir' && node.children && node.children.length) {
@@ -187,14 +189,11 @@ function applyThumbSize() {
 
   function selectNode(node) {
     clearActive();
-    const items = $$('.tree-item');
-    items.forEach((el) => {
-      if (el.querySelector('.tree-label').textContent === node.name && el.closest('.tree-node')) {
-        const labelEl = el.querySelector('.tree-label');
-        labelEl.classList.add('active');
-        labelEl.closest('.tree-item').classList.add('active');
-      }
-    });
+    const el = $(`.tree-item[data-rel="${CSS.escape(node.rel)}"]`);
+    if (el) {
+      el.classList.add('active');
+      el.querySelector('.tree-label').classList.add('active');
+    }
     state.currentPath = node.rel;
     state.imageList = [];
     if (node.type === 'archive') {
@@ -467,6 +466,15 @@ function applyThumbSize() {
     renderMasonry(items);
   }
 
+  function shortestColumn(cols) {
+    let min = cols[0], minH = cols[0].offsetHeight || 0;
+    for (let i = 1; i < cols.length; i++) {
+      const h = cols[i].offsetHeight || 0;
+      if (h < minH) { min = cols[i]; minH = h; }
+    }
+    return min;
+  }
+
   function renderTimeline(items) {
     const groups = groupByTime(items, state.timeGroup);
     const grid = $('#image-grid');
@@ -496,7 +504,7 @@ function applyThumbSize() {
       group.items.forEach((item, idx) => {
         const box = createThumbBox(item, globalIdx++);
         box.style.aspectRatio = '1 / 1';
-        columns[idx % cols].appendChild(box);
+        shortestColumn(columns).appendChild(box);
       });
       grid.appendChild(row);
     });
@@ -523,7 +531,7 @@ function applyThumbSize() {
     items.forEach((item, idx) => {
       const box = createThumbBox(item, idx);
       box.style.aspectRatio = '1 / 1';
-      columns[idx % cols].appendChild(box);
+      shortestColumn(columns).appendChild(box);
     });
     lazyLoad();
   }
@@ -558,19 +566,23 @@ function applyThumbSize() {
     return box;
   }
 
+  let lazyObserver = null;
+
   function lazyLoad() {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        const img = entry.target;
-        if (!img.src) {
-          img.src = img.dataset.thumb;
-          img.dataset.thumb = '';
-        }
-        io.unobserve(img);
-      });
-    }, { rootMargin: '200px' });
-    $$('#image-grid img[data-thumb]').forEach((img) => io.observe(img));
+    if (!lazyObserver) {
+      lazyObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const img = entry.target;
+          if (!img.src) {
+            img.src = img.dataset.thumb;
+            img.dataset.thumb = '';
+          }
+          lazyObserver.unobserve(img);
+        });
+      }, { rootMargin: '200px' });
+    }
+    $$('#image-grid img[data-thumb]').forEach((img) => lazyObserver.observe(img));
   }
 
   /* ---------------- Lightbox ---------------- */

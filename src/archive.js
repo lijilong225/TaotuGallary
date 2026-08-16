@@ -26,7 +26,7 @@ function setCachedEntries(filePath, data) {
 
 function execFileAsync(cmd, args, options = {}) {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { maxBuffer: 512 * 1024 * 1024, ...options }, (err, stdout, stderr) => {
+    execFile(cmd, args, { maxBuffer: 64 * 1024 * 1024, ...options }, (err, stdout, stderr) => {
       if (err) reject(new Error(`${cmd} failed: ${stderr || err.message}`));
       else resolve({ stdout, stderr });
     });

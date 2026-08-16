@@ -32,9 +32,9 @@ function safeResolve(userPath) {
   return target;
 }
 
-function exists(p) {
+async function exists(p) {
   try {
-    fs.accessSync(p);
+    await fs.promises.access(p);
     return true;
   } catch {
     return false;
@@ -230,7 +230,7 @@ function mediaType(name) {
 
 async function getMediaInfo(userPath, entryName) {
   const full = safeResolve(userPath);
-  if (!exists(full)) throw new Error('file not found');
+  if (!(await exists(full))) throw new Error('file not found');
 
   if (entryName) {
     const entry = normalizeArchiveEntry(entryName);
@@ -275,7 +275,7 @@ async function getMediaInfo(userPath, entryName) {
 
 async function listArchiveMedia(archiveRel, sortBy = 'name', sortOrder = 'asc') {
   const full = safeResolve(archiveRel);
-  if (!exists(full)) throw new Error('archive not found');
+  if (!(await exists(full))) throw new Error('archive not found');
   const entries = await listEntries(full, full);
   const media = entries.filter(e => !e.isDirectory && (isImageFile(e.name) || isVideoFile(e.name)));
   const allMedia = [];

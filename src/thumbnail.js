@@ -13,14 +13,14 @@ function cacheKey(...parts) {
   return path.join(config.thumbDir, hash.slice(0, 2), hash + '.webp');
 }
 
-function ensureDir(dir) {
-  fs.mkdirSync(dir, { recursive: true });
+async function ensureDir(dir) {
+  await fs.promises.mkdir(dir, { recursive: true }).catch(() => {});
 }
 
-async function generateThumbFromBuffer(buffer, targetPath, { width } = {}) {
-  ensureDir(path.dirname(targetPath));
+async function generateThumb(input, targetPath, { width } = {}) {
+  await ensureDir(path.dirname(targetPath));
   const size = width || config.thumbSize;
-  await sharp(buffer, { failOn: 'none', animated: false })
+  await sharp(input, { failOn: 'none', animated: false })
     .rotate()
     .resize(size, size, { fit: 'inside', withoutEnlargement: true })
     .webp({ quality: config.thumbQuality })
@@ -30,7 +30,7 @@ async function generateThumbFromBuffer(buffer, targetPath, { width } = {}) {
 
 function execFileAsync(cmd, args, options = {}) {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { maxBuffer: 512 * 1024 * 1024, ...options }, (err, stdout, stderr) => {
+    execFile(cmd, args, { maxBuffer: 64 * 1024 * 1024, ...options }, (err, stdout, stderr) => {
       if (err) reject(new Error(`${cmd} failed: ${stderr || err.message}`));
       else resolve({ stdout, stderr });
     });
@@ -52,7 +52,7 @@ async function probeVideoSize(inputPath) {
 }
 
 async function generateThumbFromVideo(inputPath, targetPath, { width } = {}) {
-  ensureDir(path.dirname(targetPath));
+  await ensureDir(path.dirname(targetPath));
   const size = width || config.thumbSize;
   const tmp = path.join(path.dirname(targetPath), path.basename(targetPath) + '.png');
   try {
@@ -94,7 +94,7 @@ async function getThumbForFile(filePath, width) {
     if (isVideo) {
       await generateThumbFromVideo(filePath, key, { width: w, dim });
     } else {
-      await generateThumbFromBuffer(await fs.promises.readFile(filePath), key, { width: w });
+      await generateThumb(filePath, key, { width: w });
     }
   }
   return { path: key, mime: 'image/webp' };
@@ -118,24 +118,24 @@ async function getThumbForArchiveEntry(archivePath, entryName, width) {
       await generateThumbFromVideo(video, key, { width: w, dim });
     } else {
       const buf = await readEntryBuffer(archivePath, archivePath, entryName);
-      await generateThumbFromBuffer(buf, key, { width: w });
+      await generateThumb(buf, key, { width: w });
     }
   }
   return { path: key, mime: 'image/webp' };
 }
 
-function videoCacheFile(archivePath, entryName) {
-  const stat = fs.statSync(archivePath);
+async function videoCacheFile(archivePath, entryName) {
+  const stat = await fs.promises.stat(archivePath);
   const hash = crypto.createHash('sha1').update(['video', archivePath, stat.size, stat.mtimeMs, entryName].join('|')).digest('hex');
   const ext = path.extname(entryName) || '.mp4';
   const file = path.join(VIDEO_CACHE_DIR, hash + ext);
-  ensureDir(VIDEO_CACHE_DIR);
+  await ensureDir(VIDEO_CACHE_DIR);
   return file;
 }
 
 async function extractVideoToCache(archivePath, entryName) {
   const { readEntryBuffer } = require('./archive');
-  const target = videoCacheFile(archivePath, entryName);
+  const target = await videoCacheFile(archivePath, entryName);
   try {
     await fs.promises.stat(target);
     return target;
@@ -220,7 +220,7 @@ module.exports = {
   getThumbForFile,
   getThumbForArchiveEntry,
   extractVideoToCache,
-  generateThumbFromBuffer,
+  generateThumb,
   generateThumbFromVideo,
   cacheKey,
   mimeType,
