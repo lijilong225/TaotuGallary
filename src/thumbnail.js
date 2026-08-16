@@ -51,33 +51,26 @@ async function probeVideoSize(inputPath) {
   return null;
 }
 
-function fitInside(srcW, srcH, max) {
-  const ratio = Math.min(max / srcW, max / srcH);
-  let w = Math.max(2, Math.round(srcW * ratio));
-  let h = Math.max(2, Math.round(srcH * ratio));
-  if (w % 2) w++;
-  if (h % 2) h++;
-  return { width: w, height: h };
-}
-
-async function generateThumbFromVideo(inputPath, targetPath, { width, dim } = {}) {
+async function generateThumbFromVideo(inputPath, targetPath, { width } = {}) {
   ensureDir(path.dirname(targetPath));
   const size = width || config.thumbSize;
-  const probe = dim || await probeVideoSize(inputPath);
-  let w = size;
-  let h = size;
-  if (probe) {
-    const fitted = fitInside(probe.width, probe.height, size);
-    w = fitted.width;
-    h = fitted.height;
+  const tmp = path.join(path.dirname(targetPath), path.basename(targetPath) + '.png');
+  try {
+    // 先用 ffmpeg 无损提取单帧高清 PNG，再由 sharp 高质量缩放编码 WebP
+    await execFileAsync('ffmpeg', [
+      '-hide_banner', '-loglevel', 'error',
+      '-y', '-ss', '1', '-i', inputPath,
+      '-vframes', '1',
+      '-qscale:v', '2',
+      tmp,
+    ]);
+    await sharp(tmp, { failOn: 'none' })
+      .resize(size, size, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: config.thumbQuality })
+      .toFile(targetPath);
+  } finally {
+    fs.promises.unlink(tmp).catch(() => {});
   }
-  const vf = `scale=${w}:${h}`;
-  await execFileAsync('ffmpeg', [
-    '-hide_banner', '-loglevel', 'error',
-    '-y', '-ss', '1', '-i', inputPath,
-    '-vframes', '1', '-vf', vf,
-    '-q:v', '4', targetPath,
-  ]);
   return targetPath;
 }
 
@@ -96,7 +89,7 @@ async function getThumbForFile(filePath, width) {
   const isVideo = isVideoFile(filePath);
   const dim = isVideo ? await probeVideoSize(filePath) : null;
   const dimSig = dim ? `${dim.width}x${dim.height}` : '';
-  const key = cacheKey('file', filePath, stat.size, stat.mtimeMs, w, dimSig);
+  const key = cacheKey('file', 'v2', filePath, stat.size, stat.mtimeMs, w, dimSig);
   if (!(await thumbExists(key))) {
     if (isVideo) {
       await generateThumbFromVideo(filePath, key, { width: w, dim });
@@ -119,7 +112,7 @@ async function getThumbForArchiveEntry(archivePath, entryName, width) {
     dim = await probeVideoSize(video);
   }
   const dimSig = dim ? `${dim.width}x${dim.height}` : '';
-  const key = cacheKey('archive', archivePath, stat.size, stat.mtimeMs, entryName, w, dimSig);
+  const key = cacheKey('archive', 'v2', archivePath, stat.size, stat.mtimeMs, entryName, w, dimSig);
   if (!(await thumbExists(key))) {
     if (isVideo) {
       await generateThumbFromVideo(video, key, { width: w, dim });
