@@ -21,7 +21,6 @@
     pageSize: 50,
     totalPages: 1,
     thumbSize: 'm',
-    layoutMode: 'grid',
     zoom: false,
     zoomX: 0,
     zoomY: 0,
@@ -61,43 +60,23 @@
     $('#main-view').classList.remove('hidden');
     $('#current-user').textContent = user;
     applyThumbSize();
-    await loadPreferences();
-    applyLayoutButton();
     loadTree();
   }
 
-  async function loadPreferences() {
-    try {
-      const prefs = await api('/api/preferences');
-      state.layoutMode = prefs && prefs.layout === 'masonry' ? 'masonry' : 'grid';
-    } catch {
-      state.layoutMode = 'grid';
-    }
+function applyThumbSize() {
+    const grid = $('#image-grid');
+    if (grid) grid.dataset.size = state.thumbSize;
+    $$('#thumb-size-group .thumb-size-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.size === state.thumbSize);
+    });
   }
 
-  function applyLayoutButton() {
-    $('#layout-switch-btn').textContent = state.layoutMode === 'grid' ? '瀑布流' : '网格';
-  }
-
-  $('#login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = $('#username').value.trim();
-    const password = $('#password').value;
-    try {
-      const data = await api('/api/login', {
-        method: 'POST',
-        body: JSON.stringify({ username, password }),
-      });
-      showMain(data.user);
-    } catch (err) {
-      $('#login-error').textContent = err.message;
-      $('#login-error').classList.remove('hidden');
-    }
-  });
-
-  $('#btn-logout').addEventListener('click', async () => {
-    try { await api('/api/logout', { method: 'POST' }); } catch {}
-    showLogin();
+  $$('#thumb-size-group .thumb-size-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      state.thumbSize = btn.dataset.size;
+      applyThumbSize();
+      if (state.browseData) renderBrowse();
+    });
   });
 
   /* ---------------- Sorting ---------------- */
@@ -114,36 +93,6 @@
 
   $('#time-group').addEventListener('change', (e) => {
     state.timeGroup = e.target.value;
-    if (state.browseData) renderBrowse();
-  });
-
-  /* ---------------- Thumb size ---------------- */
-  function applyThumbSize() {
-    const grid = $('#image-grid');
-    if (grid) grid.dataset.size = state.thumbSize;
-    $$('#thumb-size-group .thumb-size-btn').forEach((btn) => {
-      btn.classList.toggle('active', btn.dataset.size === state.thumbSize);
-    });
-  }
-
-  $$('#thumb-size-group .thumb-size-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      state.thumbSize = btn.dataset.size;
-      applyThumbSize();
-      if (state.browseData) renderBrowse();
-    });
-  });
-
-  /* ---------------- Layout mode ---------------- */
-  $('#layout-switch-btn').addEventListener('click', async () => {
-    state.layoutMode = state.layoutMode === 'grid' ? 'masonry' : 'grid';
-    applyLayoutButton();
-    try {
-      await api('/api/preferences', {
-        method: 'PUT',
-        body: JSON.stringify({ layout: state.layoutMode }),
-      });
-    } catch {}
     if (state.browseData) renderBrowse();
   });
 
@@ -528,15 +477,14 @@
   function renderMediaGrid(items) {
     state.imageList = items;
     if (state.sortBy === 'time') return renderTimeline(items);
-    if (state.layoutMode === 'masonry') return renderMasonry(items);
-    renderGrid(items);
+    renderMasonry(items);
   }
 
   function renderTimeline(items) {
     const groups = groupByTime(items, state.timeGroup);
     const grid = $('#image-grid');
     grid.innerHTML = '';
-    grid.classList.remove('masonry');
+    grid.classList.add('masonry');
     grid.dataset.size = state.thumbSize;
     let globalIdx = 0;
     groups.forEach(group => {
@@ -545,43 +493,26 @@
       header.innerHTML = `<span class="th-date">${formatTimeHeader(group.items[0].mtime, state.timeGroup)}</span><span class="th-count">${group.items.length} 个文件</span><span class="th-line"></span>`;
       grid.appendChild(header);
       const row = document.createElement('div');
-      row.className = 'timeline-row';
+      row.className = 'timeline-row masonry';
       row.dataset.size = state.thumbSize;
-      if (state.layoutMode === 'masonry') {
-        row.classList.add('masonry');
-        const width = grid.clientWidth || 800;
-        const size = LAYOUT_SIZES[state.thumbSize];
-        const gap = MASONRY_GAP;
-        const cols = Math.max(2, Math.min(8, Math.floor((width + gap) / (size + gap))));
-        const columns = [];
-        for (let i = 0; i < cols; i++) {
-          const col = document.createElement('div');
-          col.className = 'masonry-col';
-          columns.push(col);
-          row.appendChild(col);
-        }
-        group.items.forEach((item, idx) => {
-          const box = createThumbBox(item, globalIdx++);
-          box.style.aspectRatio = '1 / 1';
-          columns[idx % cols].appendChild(box);
-        });
-      } else {
-        group.items.forEach(item => {
-          row.appendChild(createThumbBox(item, globalIdx++));
-        });
+      const width = grid.clientWidth || 800;
+      const size = LAYOUT_SIZES[state.thumbSize];
+      const gap = MASONRY_GAP;
+      const cols = Math.max(2, Math.min(8, Math.floor((width + gap) / (size + gap))));
+      const columns = [];
+      for (let i = 0; i < cols; i++) {
+        const col = document.createElement('div');
+        col.className = 'masonry-col';
+        columns.push(col);
+        row.appendChild(col);
       }
+      group.items.forEach((item, idx) => {
+        const box = createThumbBox(item, globalIdx++);
+        box.style.aspectRatio = '1 / 1';
+        columns[idx % cols].appendChild(box);
+      });
       grid.appendChild(row);
     });
-    lazyLoad();
-  }
-
-  function renderGrid(items) {
-    state.imageList = items;
-    const grid = $('#image-grid');
-    grid.classList.remove('masonry');
-    grid.dataset.size = state.thumbSize;
-    grid.innerHTML = '';
-    items.forEach((item, idx) => grid.appendChild(createThumbBox(item, idx)));
     lazyLoad();
   }
 
@@ -604,7 +535,7 @@
     }
     items.forEach((item, idx) => {
       const box = createThumbBox(item, idx);
-      if (state.layoutMode === 'masonry') box.style.aspectRatio = '1 / 1';
+      box.style.aspectRatio = '1 / 1';
       columns[idx % cols].appendChild(box);
     });
     lazyLoad();
