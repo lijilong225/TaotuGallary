@@ -46,4 +46,4 @@ Entries discovered by the Agent during task execution should follow this format:
   - 项目根目录 `version` 文件存储当前版本号（如 `1.1.0`），不包含 `v` 前缀
   - 每次代码提交前，先将 `version` 文件中的版本号递增（patch 递增，即 `1.1.0` → `1.1.1`）
   - 版本号递增后，执行 git add / commit / push
-  - 推送后，用 version 文件的版本号创建 git tag（加 `v` 前缀，如 `v1.1.1`），并推送 tag：`git tag v<version> && git push origin v<version>`
+  - CI 自动读取 `version` 文件创建 tag（`v<version>`），无需手动打 tag 和推送
