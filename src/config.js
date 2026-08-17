@@ -31,6 +31,7 @@ const config = {
   adminPassword: process.env.ADMIN_PASSWORD || 'admin',
   sessionSecret: loadOrCreateSecret(),
   thumbDir: process.env.THUMB_DIR || path.join(ROOT_DIR, 'data', 'thumbs'),
+  videoThumbDir: process.env.VIDEO_THUMB_DIR || path.join(ROOT_DIR, 'videothumbs'),
   thumbSize: parseInt(process.env.THUMB_SIZE || '320', 10),
   thumbQuality: parseInt(process.env.THUMB_QUALITY || '80', 10),
 };

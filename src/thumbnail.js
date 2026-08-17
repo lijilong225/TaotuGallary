@@ -7,6 +7,7 @@ const { config } = require('./config');
 const { isVideoFile, mimeType } = require('./utils');
 
 const VIDEO_CACHE_DIR = path.join(config.thumbDir, '..', 'videos');
+const VIDEO_THUMB_DIR = config.videoThumbDir;
 
 // 并发信号量，限制重任务（ffmpeg/sharp）同时运行数
 class Semaphore {
@@ -28,6 +29,11 @@ const pendingThumbs = new Map();
 function cacheKey(...parts) {
   const hash = crypto.createHash('sha1').update(parts.join('|')).digest('hex');
   return path.join(config.thumbDir, hash.slice(0, 2), hash + '.webp');
+}
+
+function videoCacheKey(...parts) {
+  const hash = crypto.createHash('sha1').update(parts.join('|')).digest('hex');
+  return path.join(VIDEO_THUMB_DIR, hash.slice(0, 2), hash + '.webp');
 }
 
 async function ensureDir(dir) {
@@ -114,9 +120,9 @@ async function getThumbForFile(filePath, _width) {
   const stat = await fs.promises.stat(filePath);
   const genWidth = config.thumbSize * 2;
   const isVideo = isVideoFile(filePath);
-  const dim = isVideo ? await probeVideoSize(filePath) : null;
-  const dimSig = dim ? `${dim.width}x${dim.height}` : '';
-  const key = cacheKey('file', 'v3', filePath, stat.size, stat.mtimeMs, genWidth, dimSig);
+  const key = isVideo
+    ? videoCacheKey('file', filePath, stat.size, stat.mtimeMs, genWidth)
+    : cacheKey('file', 'v3', filePath, stat.size, stat.mtimeMs, genWidth);
   if (!(await thumbExists(key))) {
     await coalesceThumb(key, () => generateThumbManaged(() =>
       isVideo ? generateThumbFromVideo(filePath, key, { width: genWidth })
@@ -131,14 +137,13 @@ async function getThumbForArchiveEntry(archivePath, entryName, _width) {
   const stat = await fs.promises.stat(archivePath);
   const genWidth = config.thumbSize * 2;
   const isVideo = isVideoFile(entryName);
-  let dim = null;
   let video = null;
   if (isVideo) {
     video = await coalesceExtract(archivePath, entryName);
-    dim = await probeVideoSize(video);
   }
-  const dimSig = dim ? `${dim.width}x${dim.height}` : '';
-  const key = cacheKey('archive', 'v3', archivePath, stat.size, stat.mtimeMs, entryName, genWidth, dimSig);
+  const key = isVideo
+    ? videoCacheKey('archive', archivePath, stat.size, stat.mtimeMs, entryName, genWidth)
+    : cacheKey('archive', 'v3', archivePath, stat.size, stat.mtimeMs, entryName, genWidth);
   if (!(await thumbExists(key))) {
     await coalesceThumb(key, () => generateThumbManaged(() =>
       isVideo ? generateThumbFromVideo(video, key, { width: genWidth })
@@ -200,10 +205,19 @@ async function extractVideoToCache(archivePath, entryName) {
 async function cleanupThumbCache() {
   const logger = require('./logger');
   const { isImageFile, isVideoFile, isArchiveFile, isHiddenName } = require('./utils');
-  const { readEntryBuffer, listEntries } = require('./archive');
+  const { listEntries } = require('./archive');
 
   const expected = new Set();
   let fileCount = 0;
+
+  async function addKey(full, stat, entry) {
+    if (isVideoFile(entry)) {
+      expected.add(videoCacheKey('file', full, stat.size, stat.mtimeMs, config.thumbSize * 2));
+    } else {
+      expected.add(cacheKey('file', 'v3', full, stat.size, stat.mtimeMs, config.thumbSize * 2));
+    }
+    fileCount++;
+  }
 
   async function walkDir(dir) {
     let names;
@@ -216,15 +230,16 @@ async function cleanupThumbCache() {
       if (stat.isDirectory()) {
         await walkDir(full);
       } else if (isImageFile(name) || isVideoFile(name)) {
-        const key = cacheKey('file', 'v3', full, stat.size, stat.mtimeMs, config.thumbSize * 2, '');
-        expected.add(key);
-        fileCount++;
+        await addKey(full, stat, name);
       } else if (isArchiveFile(name)) {
         let entries;
         try { entries = await listEntries(full); } catch { continue; }
         for (const entry of entries) {
           if (isImageFile(entry) || isVideoFile(entry)) {
-            const key = cacheKey('archive', 'v3', full, stat.size, stat.mtimeMs, entry, config.thumbSize * 2, '');
+            const video = isVideoFile(entry);
+            const key = video
+              ? videoCacheKey('archive', full, stat.size, stat.mtimeMs, entry, config.thumbSize * 2)
+              : cacheKey('archive', 'v3', full, stat.size, stat.mtimeMs, entry, config.thumbSize * 2);
             expected.add(key);
             fileCount++;
           }
@@ -239,30 +254,30 @@ async function cleanupThumbCache() {
 
   let deleted = 0;
   let freed = 0;
-  const thumbRoot = config.thumbDir;
 
-  if (!fs.existsSync(thumbRoot)) return;
-
-  const dirs = await fs.promises.readdir(thumbRoot);
-  for (const d of dirs) {
-    const sub = path.join(thumbRoot, d);
-    const stat = await fs.promises.stat(sub).catch(() => null);
-    if (!stat || !stat.isDirectory()) continue;
-    const files = await fs.promises.readdir(sub);
-    for (const f of files) {
-      const fp = path.join(sub, f);
-      if (!expected.has(fp)) {
-        const sz = (await fs.promises.stat(fp).catch(() => null))?.size || 0;
-        await fs.promises.unlink(fp).catch(() => {});
-        deleted++;
-        freed += sz;
+  for (const thumbRoot of [config.thumbDir, VIDEO_THUMB_DIR]) {
+    if (!fs.existsSync(thumbRoot)) continue;
+    const dirs = await fs.promises.readdir(thumbRoot);
+    for (const d of dirs) {
+      const sub = path.join(thumbRoot, d);
+      const stat = await fs.promises.stat(sub).catch(() => null);
+      if (!stat || !stat.isDirectory()) continue;
+      const files = await fs.promises.readdir(sub);
+      for (const f of files) {
+        const fp = path.join(sub, f);
+        if (!expected.has(fp)) {
+          const sz = (await fs.promises.stat(fp).catch(() => null))?.size || 0;
+          await fs.promises.unlink(fp).catch(() => {});
+          deleted++;
+          freed += sz;
+        }
       }
+      // remove empty subdirectories
+      try {
+        const remaining = await fs.promises.readdir(sub);
+        if (remaining.length === 0) await fs.promises.rmdir(sub);
+      } catch { /* ignore */ }
     }
-    // remove empty subdirectories
-    try {
-      const remaining = await fs.promises.readdir(sub);
-      if (remaining.length === 0) await fs.promises.rmdir(sub);
-    } catch { /* ignore */ }
   }
 
   logger.info(`缩略图清理完成: 删除 ${deleted} 个文件，释放 ${(freed / 1024 / 1024).toFixed(1)} MB`);
