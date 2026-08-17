@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/css/style.css?v=20260817d">
-  <script src="/js/icons.js?v=20260817d"></script>
+  <link rel="stylesheet" href="/css/style.css?v=20260817e">
+  <script src="/js/icons.js?v=20260817e"></script>
 </head>
 <body>
   <div id="login-view" class="login-view hidden">
@@ -106,16 +106,15 @@
       <img id="lb-img" alt="">
       <div id="lb-video-wrap" class="video-wrap hidden">
         <video id="lb-video" playsinline></video>
-        <div class="video-controls">
-          <button id="vc-play" class="vc-btn" title="播放/暂停" data-icon="play"></button>
-          <input type="range" id="vc-progress" min="0" max="1000" value="0" step="1" title="进度">
-          <span id="vc-time" class="vc-time">0:00 / 0:00</span>
-          <button id="vc-mute" class="vc-btn" title="静音" data-icon="volume"></button>
-          <input type="range" id="vc-volume" min="0" max="100" value="100" step="1" title="音量">
-          <button id="vc-pip" class="vc-btn" title="小窗画中画" data-icon="fullScreen"></button>
-          <button id="vc-fullscreen" class="vc-btn" title="浏览器全屏" data-icon="fullScreen"></button>
-          <button id="vc-close" class="vc-btn" title="关闭" data-icon="closeSmall"></button>
+        <div id="vc-center" class="vc-center hidden">
+          <div class="vc-pause-ico">⏸</div>
         </div>
+        <div id="vc-progress-bar" class="vc-progress-bar">
+          <div class="vc-progress-track">
+            <div id="vc-progress-fill" class="vc-progress-fill"></div>
+          </div>
+        </div>
+        <button id="vc-fullscreen" class="vc-fullscreen-btn" title="全屏" data-icon="fullScreen"></button>
       </div>
     </div>
     <button id="lb-close" class="lb-corner-btn lb-close" title="返回" data-icon="back"></button>
@@ -140,6 +139,6 @@
     </div>
   </div>
 
-  <script src="/js/app.js?v=20260817d"></script>
+  <script src="/js/app.js?v=20260817e"></script>
 </body>
 </html>

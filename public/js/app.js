@@ -773,7 +773,7 @@ function applyThumbSize() {
   /* ---------------- Lightbox ---------------- */
   function openLightbox(index) {
     state.lbIndex = index;
-    $('#lightbox').classList.remove('hidden');
+    $('#lightbox').classList.remove('hidden', 'video-playing');
     document.body.style.overflow = 'hidden';
     hideInfoPanel();
     resetZoom();
@@ -782,7 +782,7 @@ function applyThumbSize() {
 
   function closeLightbox() {
     stopVideo();
-    clearTimeout(vcTimer);
+    $('#lightbox').classList.remove('video-playing');
     $('#lightbox').classList.add('hidden');
     $('#lb-img').src = '';
     document.body.style.overflow = '';
@@ -800,6 +800,8 @@ function applyThumbSize() {
       $('#lb-video-wrap').classList.remove('hidden');
       $('#lb-zoom-toggle').classList.add('hidden');
       $('#lb-download').classList.add('hidden');
+      $('#lightbox').classList.remove('video-playing');
+      vcCenter.classList.remove('hidden');
       const video = $('#lb-video');
       stopVideo();
       video.src = videoUrl(item);
@@ -864,8 +866,7 @@ function applyThumbSize() {
     } catch (err) {
       console.error(err);
     }
-    $('#vc-progress').value = 0;
-    $('#vc-time').textContent = '0:00 / 0:00';
+    $('#vc-progress-fill').style.width = '0%';
   }
 
   /* ---------------- Info panel ---------------- */
@@ -1145,100 +1146,57 @@ function applyThumbSize() {
     applyZoom();
   });
 
-  /* ---------------- Video controls ---------------- */
+  /* ---------------- Video player UI ---------------- */
   const video = $('#lb-video');
   const videoWrap = $('#lb-video-wrap');
-  let vcTimer = null;
+  const vcCenter = $('#vc-center');
+  const vcProgressFill = $('#vc-progress-fill');
 
-  function showVideoControls() {
-    videoWrap.querySelector('.video-controls').classList.add('show');
-    $('#lightbox').classList.remove('hide-overlays');
-  }
-
-  function hideVideoControls() {
-    videoWrap.querySelector('.video-controls').classList.remove('show');
-    $('#lightbox').classList.add('hide-overlays');
-  }
-
-  function resetVideoControlsTimer() {
-    clearTimeout(vcTimer);
-    vcTimer = setTimeout(() => {
-      if (!video.paused) hideVideoControls();
-    }, 3000);
-  }
-
-  function onVideoActivity() {
-    showVideoControls();
-    if (!video.paused) resetVideoControlsTimer();
-  }
-
-  function syncVideoControls() {
-    clearTimeout(vcTimer);
-    if (video.paused) {
-      showVideoControls();
-      return;
+  function syncVideoUI() {
+    const playing = !video.paused;
+    $('#lightbox').classList.toggle('video-playing', playing);
+    vcCenter.classList.toggle('hidden', playing);
+    if (playing) {
+      vcProgressFill.style.width = video.duration ? ((video.currentTime / video.duration) * 100) + '%' : '0%';
     }
-    showVideoControls();
-    resetVideoControlsTimer();
   }
 
-  videoWrap.addEventListener('mousemove', onVideoActivity);
-  videoWrap.addEventListener('pointerdown', onVideoActivity);
+  video.addEventListener('play', syncVideoUI);
+  video.addEventListener('pause', syncVideoUI);
 
-  function fmtTime(s) {
-    if (!isFinite(s) || s < 0) s = 0;
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${String(sec).padStart(2, '0')}`;
-  }
+  video.addEventListener('timeupdate', () => {
+    if (!video.duration) return;
+    vcProgressFill.style.width = (video.currentTime / video.duration) * 100 + '%';
+  });
 
-  $('#vc-play').addEventListener('click', () => {
+  video.addEventListener('loadedmetadata', () => {
+    vcProgressFill.style.width = '0%';
+  });
+
+  videoWrap.addEventListener('click', (e) => {
+    if (e.target.closest('.vc-fullscreen-btn') || e.target.closest('.vc-progress-bar')) return;
     if (video.paused) video.play();
     else video.pause();
   });
 
-  video.addEventListener('play', () => { $('#vc-play').innerHTML = icon('pause'); syncVideoControls(); });
-  video.addEventListener('pause', () => { $('#vc-play').innerHTML = icon('play'); syncVideoControls(); });
+  video.addEventListener('dblclick', () => {
+    const target = $('#lightbox');
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (document.fullscreenEnabled) target.requestFullscreen();
+  });
 
-  video.addEventListener('timeupdate', () => {
+  /* 进度条点击跳转 */
+  const progressBar = $('#vc-progress-bar');
+  progressBar.addEventListener('click', (e) => {
     if (!video.duration) return;
-    $('#vc-progress').value = (video.currentTime / video.duration) * 1000;
-    $('#vc-time').textContent = `${fmtTime(video.currentTime)} / ${fmtTime(video.duration)}`;
+    const rect = progressBar.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const pct = Math.max(0, Math.min(1, x / rect.width));
+    video.currentTime = pct * video.duration;
+    vcProgressFill.style.width = pct * 100 + '%';
   });
 
-  $('#vc-progress').addEventListener('input', () => {
-    if (!video.duration) return;
-    video.currentTime = (parseInt($('#vc-progress').value, 10) / 1000) * video.duration;
-  });
-
-  video.addEventListener('loadedmetadata', () => {
-    $('#vc-time').textContent = `0:00 / ${fmtTime(video.duration)}`;
-  });
-
-  $('#vc-volume').addEventListener('input', () => {
-    const v = parseInt($('#vc-volume').value, 10) / 100;
-    video.volume = v;
-    video.muted = v === 0;
-    $('#vc-mute').innerHTML = v === 0 ? icon('volumeMute') : icon('volume');
-  });
-
-  $('#vc-mute').addEventListener('click', () => {
-    video.muted = !video.muted;
-    $('#vc-mute').innerHTML = video.muted ? icon('volumeMute') : icon('volume');
-  });
-
-  $('#vc-pip').addEventListener('click', async () => {
-    try {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-      } else if (video.requestPictureInPicture) {
-        await video.requestPictureInPicture();
-      }
-    } catch (err) {
-      console.error('PiP failed:', err);
-    }
-  });
-
+  /* 全屏按钮 */
   $('#vc-fullscreen').addEventListener('click', () => {
     const target = $('#lightbox');
     if (document.fullscreenElement) {
@@ -1250,16 +1208,8 @@ function applyThumbSize() {
 
   document.addEventListener('fullscreenchange', () => {
     if ($('#lb-video-wrap').classList.contains('hidden')) return;
-    syncVideoControls();
+    /* 全屏时不再显示进度条和全屏按钮（CSS 处理），暂停图标不受影响 */
   });
-
-  video.addEventListener('dblclick', () => {
-    const target = $('#lightbox');
-    if (document.fullscreenElement) document.exitFullscreen();
-    else if (document.fullscreenEnabled) target.requestFullscreen();
-  });
-
-  $('#vc-close').addEventListener('click', closeLightbox);
 
   document.addEventListener('keydown', (e) => {
     if ($('#lightbox').classList.contains('hidden')) return;
@@ -1269,9 +1219,14 @@ function applyThumbSize() {
       else if (e.key === 'ArrowLeft') prevImage();
       return;
     }
-    if (e.key === 'Escape') closeLightbox();
-    else if (e.key === ' ') { e.preventDefault(); if (video.paused) video.play(); else video.pause(); }
-    else if (e.key === 'ArrowRight') { video.currentTime = Math.min(video.duration, video.currentTime + 5); }
+    if (e.key === 'Escape') {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else closeLightbox();
+    } else if (e.key === ' ') {
+      e.preventDefault();
+      if (video.paused) video.play();
+      else video.pause();
+    } else if (e.key === 'ArrowRight') { video.currentTime = Math.min(video.duration, video.currentTime + 5); }
     else if (e.key === 'ArrowLeft') { video.currentTime = Math.max(0, video.currentTime - 5); }
   });
 

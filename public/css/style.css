@@ -1013,117 +1013,91 @@ body {
 #lightbox:fullscreen .video-wrap { border-radius: 0; }
 #lightbox:fullscreen #lb-video { border-radius: 0; }
 
-.video-controls {
-  position: absolute;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 92%;
-  max-width: 1040px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 14px;
-  background: linear-gradient(180deg, rgba(250,250,248,.95), rgba(222,222,216,.95));
-  border: 1px solid rgba(0,0,0,.18);
-  border-radius: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .2s;
-  box-shadow: 0 4px 14px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.9);
+/* 视频播放时隐藏导航和 Overlay 按钮 */
+#lightbox.video-playing .lb-prev,
+#lightbox.video-playing .lb-next,
+#lightbox.video-playing .lb-close,
+#lightbox.video-playing .lb-fav,
+#lightbox.video-playing .lb-info-toggle {
+  display: none !important;
 }
 
-.video-wrap:hover .video-controls,
-.video-wrap:focus-within .video-controls { opacity: 1; pointer-events: auto; }
-
-.video-controls.show { opacity: 1; pointer-events: auto; }
-
-/* 全屏播放时由 JS 控制显隐，暂时禁用 hover 触发，实现静止自动隐藏 */
-#lightbox:fullscreen .video-controls { opacity: 0; pointer-events: none; }
-#lightbox:fullscreen .video-controls.show { opacity: 1; pointer-events: auto; }
+/* 全屏播放时不显示任何控件和按钮 */
+#lightbox:fullscreen .vc-progress-bar,
+#lightbox:fullscreen .vc-fullscreen-btn {
+  display: none;
+}
 
 /* 全屏播放时隐藏所有 Overlay 按钮 */
-#lightbox.hide-overlays .lb-close,
-
-      #lightbox.hide-overlays .lb-counter,
-
-      #lightbox.hide-overlays .lb-nav,
-
-      #lightbox.hide-overlays .lb-zoom-toggle,
-
-      #lightbox.hide-overlays .lb-fav,
-
-      #lightbox.hide-overlays .lb-download,
-#lightbox.hide-overlays .lb-info-toggle,
-#lightbox.hide-overlays .lb-navigator {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transition: opacity .2s;
+#lightbox:fullscreen .lb-close,
+#lightbox:fullscreen .lb-counter,
+#lightbox:fullscreen .lb-nav,
+#lightbox:fullscreen .lb-zoom-toggle,
+#lightbox:fullscreen .lb-fav,
+#lightbox:fullscreen .lb-download,
+#lightbox:fullscreen .lb-info-toggle,
+#lightbox:fullscreen .lb-navigator {
+  display: none !important;
 }
 
-.vc-btn {
-  width: 34px;
-  height: 34px;
-  flex-shrink: 0;
-  border: 1px solid #8f8f8f;
-  border-radius: 6px;
-  color: #3a3a3a;
-  font-size: 14px;
+/* 进度条 */
+.vc-progress-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20px;
+  z-index: 10;
   cursor: pointer;
-  background: linear-gradient(180deg, #f4f4f4 0%, #c4c4c4 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 1px 2px rgba(0,0,0,.25);
-  transition: filter .12s;
+  display: flex;
+  align-items: flex-end;
+}
+.vc-progress-track {
+  width: 100%;
+  height: 3px;
+  background: #666;
+  position: relative;
+}
+.vc-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: #2196F3;
+  transition: width .1s linear;
+}
+
+/* 视频中心暂停图标 */
+.vc-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+  color: rgba(255,255,255,0.85);
+  font-size: 64px;
+  line-height: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+/* 全屏按钮 */
+.vc-fullscreen-btn {
+  position: absolute;
+  bottom: 28px;
+  right: 12px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.vc-btn svg { width: 1em; height: 1em; display: block; }
-.vc-btn:hover { filter: brightness(1.05); }
-.vc-btn:active { box-shadow: inset 0 2px 4px rgba(0,0,0,.25); }
-
-.vc-time {
-  color: #3a3a3a;
-  font-size: 12px;
-  white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(255,255,255,.6);
-}
-
-.video-controls input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  height: 8px;
-  flex: 1;
-  min-width: 40px;
-  background: linear-gradient(180deg, #cfcfc9 0%, #e8e8e2 100%);
-  border: 1px solid #a8a8a0;
+  background: rgba(0,0,0,0.4);
+  border: none;
   border-radius: 4px;
+  color: #fff;
+  font-size: 16px;
   cursor: pointer;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,.3), 0 1px 0 rgba(255,255,255,.8);
-  outline: none;
+  transition: opacity .2s;
 }
-
-.video-controls input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 15px;
-  height: 19px;
-  background: linear-gradient(180deg, #ffffff 0%, #b6b6b6 100%);
-  border: 1px solid #6a6a6a;
-  border-radius: 4px;
-  cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.95);
-}
-
-.video-controls input[type="range"]::-moz-range-thumb {
-  width: 15px;
-  height: 19px;
-  background: linear-gradient(180deg, #ffffff 0%, #b6b6b6 100%);
-  border: 1px solid #6a6a6a;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#vc-volume { flex: 0 0 90px; }
 
 /* Lightbox 导航与角落按钮（金属） */
 .lb-nav {
