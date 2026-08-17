@@ -83,27 +83,27 @@ async function thumbExists(targetPath) {
   }
 }
 
-async function getThumbForFile(filePath, width) {
+async function getThumbForFile(filePath, _width) {
   const stat = await fs.promises.stat(filePath);
-  const w = width || config.thumbSize;
+  const genWidth = config.thumbSize * 2;
   const isVideo = isVideoFile(filePath);
   const dim = isVideo ? await probeVideoSize(filePath) : null;
   const dimSig = dim ? `${dim.width}x${dim.height}` : '';
-  const key = cacheKey('file', 'v2', filePath, stat.size, stat.mtimeMs, w, dimSig);
+  const key = cacheKey('file', 'v3', filePath, stat.size, stat.mtimeMs, genWidth, dimSig);
   if (!(await thumbExists(key))) {
     if (isVideo) {
-      await generateThumbFromVideo(filePath, key, { width: w, dim });
+      await generateThumbFromVideo(filePath, key, { width: genWidth });
     } else {
-      await generateThumb(filePath, key, { width: w });
+      await generateThumb(filePath, key, { width: genWidth });
     }
   }
   return { path: key, mime: 'image/webp' };
 }
 
-async function getThumbForArchiveEntry(archivePath, entryName, width) {
+async function getThumbForArchiveEntry(archivePath, entryName, _width) {
   const { readEntryBuffer } = require('./archive');
   const stat = await fs.promises.stat(archivePath);
-  const w = width || config.thumbSize;
+  const genWidth = config.thumbSize * 2;
   const isVideo = isVideoFile(entryName);
   let dim = null;
   let video = null;
@@ -112,13 +112,13 @@ async function getThumbForArchiveEntry(archivePath, entryName, width) {
     dim = await probeVideoSize(video);
   }
   const dimSig = dim ? `${dim.width}x${dim.height}` : '';
-  const key = cacheKey('archive', 'v2', archivePath, stat.size, stat.mtimeMs, entryName, w, dimSig);
+  const key = cacheKey('archive', 'v3', archivePath, stat.size, stat.mtimeMs, entryName, genWidth, dimSig);
   if (!(await thumbExists(key))) {
     if (isVideo) {
-      await generateThumbFromVideo(video, key, { width: w, dim });
+      await generateThumbFromVideo(video, key, { width: genWidth });
     } else {
       const buf = await readEntryBuffer(archivePath, archivePath, entryName);
-      await generateThumb(buf, key, { width: w });
+      await generateThumb(buf, key, { width: genWidth });
     }
   }
   return { path: key, mime: 'image/webp' };
@@ -164,7 +164,7 @@ async function cleanupThumbCache() {
       if (stat.isDirectory()) {
         await walkDir(full);
       } else if (isImageFile(name) || isVideoFile(name)) {
-        const key = cacheKey('file', 'v2', full, stat.size, stat.mtimeMs, config.thumbSize, '');
+        const key = cacheKey('file', 'v3', full, stat.size, stat.mtimeMs, config.thumbSize * 2, '');
         expected.add(key);
         fileCount++;
       } else if (isArchiveFile(name)) {
@@ -172,7 +172,7 @@ async function cleanupThumbCache() {
         try { entries = await listEntries(full); } catch { continue; }
         for (const entry of entries) {
           if (isImageFile(entry) || isVideoFile(entry)) {
-            const key = cacheKey('archive', 'v2', full, stat.size, stat.mtimeMs, entry, config.thumbSize, '');
+            const key = cacheKey('archive', 'v3', full, stat.size, stat.mtimeMs, entry, config.thumbSize * 2, '');
             expected.add(key);
             fileCount++;
           }
