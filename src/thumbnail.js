@@ -277,4 +277,5 @@ module.exports = {
   cacheKey,
   mimeType,
   cleanupThumbCache,
+  probeVideoSize,
 };

@@ -4,6 +4,7 @@ const sharp = require('sharp');
 const { config } = require('./config');
 const { isImageFile, isArchiveFile, isHiddenName, isVideoFile, normalizeArchiveEntry } = require('./utils');
 const { listEntries, readEntryBuffer } = require('./archive');
+const { probeVideoSize, extractVideoToCache } = require('./thumbnail');
 
 const TREE_CACHE_TTL = 30 * 1000;
 const COUNT_CACHE_TTL = 30 * 1000;
@@ -252,6 +253,10 @@ async function getMediaInfo(userPath, entryName) {
     if (info.type === 'image') {
       const buf = await readEntryBuffer(full, full, entry);
       Object.assign(info, await imageDimensionsFromBuffer(buf));
+    } else if (info.type === 'video') {
+      const videoPath = await extractVideoToCache(full, entry);
+      const dim = await probeVideoSize(videoPath);
+      if (dim) Object.assign(info, dim);
     }
     return info;
   }
@@ -269,6 +274,9 @@ async function getMediaInfo(userPath, entryName) {
   };
   if (info.type === 'image') {
     Object.assign(info, await imageDimensionsFromFile(full));
+  } else if (info.type === 'video') {
+    const dim = await probeVideoSize(full);
+    if (dim) Object.assign(info, dim);
   }
   return info;
 }

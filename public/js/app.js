@@ -923,6 +923,7 @@ function applyThumbSize() {
   function renderInfoFields(info, item) {
     const fields = $('#lb-info-fields');
     fields.innerHTML = '';
+    $('#lb-info-title').textContent = info.type === 'video' ? '视频信息' : '图片信息';
 
     const typeText = info.type === 'video' ? '视频' : '图片';
     let pathText = info.path || '-';
@@ -935,11 +936,11 @@ function applyThumbSize() {
     fields.appendChild(infoRow('类型', typeText));
     fields.appendChild(infoRow('大小', info.sizeText || '-'));
 
-    if (info.type === 'image') {
-      let dim = '-';
+    let dim = '-';
       if (info.width && info.height) dim = `${info.width} x ${info.height}`;
       fields.appendChild(infoRow('尺寸', dim));
-    } else if (info.type === 'video') {
+
+    if (info.type === 'video') {
       const videoEl = $('#lb-video');
       const dur = isFinite(videoEl.duration) && videoEl.duration > 0 ? fmtTime(videoEl.duration) : null;
       if (dur) {
