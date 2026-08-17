@@ -8,6 +8,23 @@ const { isVideoFile, mimeType } = require('./utils');
 
 const VIDEO_CACHE_DIR = path.join(config.thumbDir, '..', 'videos');
 
+// 并发信号量，限制重任务（ffmpeg/sharp）同时运行数
+class Semaphore {
+  constructor(max) { this.max = max; this.queue = []; this.active = 0; }
+  acquire() {
+    if (this.active < this.max) { this.active++; return Promise.resolve(); }
+    return new Promise(r => this.queue.push(r));
+  }
+  release() {
+    if (this.queue.length > 0) { this.queue.shift()(); }
+    else { this.active--; }
+  }
+}
+const thumbSem = new Semaphore(2);
+
+// 请求合并：同一缓存键正在生成时，后续请求等待同一 Promise
+const pendingThumbs = new Map();
+
 function cacheKey(...parts) {
   const hash = crypto.createHash('sha1').update(parts.join('|')).digest('hex');
   return path.join(config.thumbDir, hash.slice(0, 2), hash + '.webp');
@@ -26,6 +43,16 @@ async function generateThumb(input, targetPath, { width } = {}) {
     .webp({ quality: config.thumbQuality })
     .toFile(targetPath);
   return targetPath;
+}
+
+// 带并发控制的缩略图生成（仅限制重任务 — ffmpeg/sharp）
+async function generateThumbManaged(fn) {
+  await thumbSem.acquire();
+  try {
+    await fn();
+  } finally {
+    thumbSem.release();
+  }
 }
 
 function execFileAsync(cmd, args, options = {}) {
@@ -91,11 +118,10 @@ async function getThumbForFile(filePath, _width) {
   const dimSig = dim ? `${dim.width}x${dim.height}` : '';
   const key = cacheKey('file', 'v3', filePath, stat.size, stat.mtimeMs, genWidth, dimSig);
   if (!(await thumbExists(key))) {
-    if (isVideo) {
-      await generateThumbFromVideo(filePath, key, { width: genWidth });
-    } else {
-      await generateThumb(filePath, key, { width: genWidth });
-    }
+    await coalesceThumb(key, () => generateThumbManaged(() =>
+      isVideo ? generateThumbFromVideo(filePath, key, { width: genWidth })
+              : generateThumb(filePath, key, { width: genWidth })
+    ));
   }
   return { path: key, mime: 'image/webp' };
 }
@@ -108,20 +134,54 @@ async function getThumbForArchiveEntry(archivePath, entryName, _width) {
   let dim = null;
   let video = null;
   if (isVideo) {
-    video = await extractVideoToCache(archivePath, entryName);
+    video = await coalesceExtract(archivePath, entryName);
     dim = await probeVideoSize(video);
   }
   const dimSig = dim ? `${dim.width}x${dim.height}` : '';
   const key = cacheKey('archive', 'v3', archivePath, stat.size, stat.mtimeMs, entryName, genWidth, dimSig);
   if (!(await thumbExists(key))) {
-    if (isVideo) {
-      await generateThumbFromVideo(video, key, { width: genWidth });
-    } else {
-      const buf = await readEntryBuffer(archivePath, archivePath, entryName);
-      await generateThumb(buf, key, { width: genWidth });
-    }
+    await coalesceThumb(key, () => generateThumbManaged(() =>
+      isVideo ? generateThumbFromVideo(video, key, { width: genWidth })
+              : generateThumb(readEntryBuffer(archivePath, archivePath, entryName), key, { width: genWidth })
+    ));
   }
   return { path: key, mime: 'image/webp' };
+}
+
+// 请求合并：同一缓存键的缩略图只生成一次，其余请求等待
+async function coalesceThumb(key, run) {
+  const existing = pendingThumbs.get(key);
+  if (existing) return existing;
+  const p = (async () => {
+    try {
+      await run();
+    } finally {
+      pendingThumbs.delete(key);
+    }
+  })();
+  pendingThumbs.set(key, p);
+  return p;
+}
+
+// 请求合并：同一视频文件只解压一次
+const pendingExtracts = new Map();
+async function coalesceExtract(archivePath, entryName) {
+  const { readEntryBuffer } = require('./archive');
+  const target = await videoCacheFile(archivePath, entryName);
+  const done = async () => {
+    try {
+      await fs.promises.stat(target);
+      return target;
+    } catch { /* not extracted yet */ }
+    const buf = await readEntryBuffer(archivePath, archivePath, entryName);
+    await fs.promises.writeFile(target, buf);
+    return target;
+  };
+  const existing = pendingExtracts.get(target);
+  if (existing) return existing;
+  const p = done().finally(() => pendingExtracts.delete(target));
+  pendingExtracts.set(target, p);
+  return p;
 }
 
 async function videoCacheFile(archivePath, entryName) {
@@ -134,15 +194,7 @@ async function videoCacheFile(archivePath, entryName) {
 }
 
 async function extractVideoToCache(archivePath, entryName) {
-  const { readEntryBuffer } = require('./archive');
-  const target = await videoCacheFile(archivePath, entryName);
-  try {
-    await fs.promises.stat(target);
-    return target;
-  } catch { /* not cached yet */ }
-  const buf = await readEntryBuffer(archivePath, archivePath, entryName);
-  await fs.promises.writeFile(target, buf);
-  return target;
+  return coalesceExtract(archivePath, entryName);
 }
 
 async function cleanupThumbCache() {
