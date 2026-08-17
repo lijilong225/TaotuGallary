@@ -136,8 +136,27 @@
     $('#main-view').classList.remove('hidden');
     $('#current-user').textContent = user;
     applyThumbSize();
-    loadTree();
-    loadFavorites();
+    await loadTree();
+    await loadFavorites();
+    await openDirectory('');
+    if (state.browseData && state.browseData.mode === 'dir') {
+      const hasContent = state.browseData.media.length > 0 || state.browseData.archives.length > 0;
+      if (!hasContent && state.browseData.folders.length > 0) {
+        const firstDir = findTreeDir(state.tree, state.browseData.folders[0].rel);
+        if (firstDir) selectNode(firstDir);
+      }
+    }
+  }
+
+  function findTreeDir(nodes, rel) {
+    for (const n of nodes) {
+      if (n.rel === rel) return n;
+      if (n.children) {
+        const found = findTreeDir(n.children, rel);
+        if (found) return found;
+      }
+    }
+    return null;
   }
 
   $('#login-form').addEventListener('submit', async (e) => {
