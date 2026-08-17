@@ -139,12 +139,9 @@
     await loadTree();
     await loadFavorites();
     await openDirectory('');
-    if (state.browseData && state.browseData.mode === 'dir') {
-      const hasContent = state.browseData.media.length > 0 || state.browseData.archives.length > 0;
-      if (!hasContent && state.browseData.folders.length > 0) {
-        const firstDir = findTreeDir(state.tree, state.browseData.folders[0].rel);
-        if (firstDir) selectNode(firstDir);
-      }
+    if (state.browseData && state.browseData.mode === 'dir' && state.browseData.folders.length > 0) {
+      const firstDir = findTreeDir(state.tree, state.browseData.folders[0].rel);
+      if (firstDir) selectNode(firstDir);
     }
   }
 
