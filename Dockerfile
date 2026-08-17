@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM --platform=$TARGETPLATFORM node:22-alpine AS builder
 
 RUN apk add --no-cache python3 make g++
 
@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm install --omit=dev && npm cache clean --force
 
-FROM node:22-alpine
+FROM --platform=$TARGETPLATFORM node:22-alpine
 
 RUN apk add --no-cache libarchive-tools ffmpeg
 
