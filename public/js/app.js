@@ -27,7 +27,7 @@
     browseData: null,
     sortBy: 'time',
     sortOrder: 'desc',
-    timeGroup: 'day',
+    timeGroup: 'month',
     pageNum: 1,
     pageSize: 50,
     totalPages: 1,
