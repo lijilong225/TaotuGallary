@@ -1157,21 +1157,19 @@ function applyThumbSize() {
 
   function hideVideoControls() {
     videoWrap.querySelector('.video-controls').classList.remove('show');
-    if (document.fullscreenElement) $('#lightbox').classList.add('hide-overlays');
+    $('#lightbox').classList.add('hide-overlays');
   }
 
   function resetVideoControlsTimer() {
     clearTimeout(vcTimer);
     vcTimer = setTimeout(() => {
-      if (!video.paused && document.fullscreenElement) hideVideoControls();
+      if (!video.paused) hideVideoControls();
     }, 3000);
   }
 
   function onVideoActivity() {
-    if (document.fullscreenElement) {
-      showVideoControls();
-      if (!video.paused) resetVideoControlsTimer();
-    }
+    showVideoControls();
+    if (!video.paused) resetVideoControlsTimer();
   }
 
   function syncVideoControls() {
@@ -1180,12 +1178,8 @@ function applyThumbSize() {
       showVideoControls();
       return;
     }
-    if (document.fullscreenElement) {
-      showVideoControls();
-      resetVideoControlsTimer();
-    } else {
-      hideVideoControls();
-    }
+    showVideoControls();
+    resetVideoControlsTimer();
   }
 
   videoWrap.addEventListener('mousemove', onVideoActivity);
