@@ -195,7 +195,7 @@
       const rootEl = document.createElement('div');
       rootEl.className = 'm-tree-node m-tree-node-root';
       rootEl.dataset.rel = '';
-      rootEl.innerHTML = '<span class="m-tree-label">📁 根目录</span>';
+      rootEl.innerHTML = '<span class="m-tree-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg></span><span class="m-tree-label">根目录</span>';
       rootEl.addEventListener('click', () => {
         openDirectory('');
         closeDrawer();
@@ -390,7 +390,7 @@
     const card = document.createElement('div');
     card.className = 'm-folder-card';
     card.innerHTML = `
-      <div class="m-folder-icon">📁</div>
+      <div class="m-folder-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg></div>
       <div class="m-folder-name"></div>
       <div class="m-folder-count">${f.count !== undefined ? f.count : ''}</div>
     `;
@@ -403,7 +403,7 @@
     const card = document.createElement('div');
     card.className = 'm-family-card';
     card.innerHTML = `
-      <div class="m-family-icon">🗜</div>
+      <div class="m-family-icon"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 2H7v20h10V2h-3.5zM9 12a3 3 0 0 1 6 0 3 3 0 0 1-6 0z"/></svg></div>
       <div class="m-family-name"></div>
     `;
     card.querySelector('.m-family-name').textContent = a.name;
@@ -462,13 +462,13 @@
     if (item.mime === 'video') {
       const badge = document.createElement('div');
       badge.className = 'm-item-video-badge';
-      badge.textContent = '▶';
+      badge.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
       box.appendChild(badge);
     }
 
     const fav = document.createElement('button');
     fav.className = 'm-item-fav';
-    fav.textContent = '♥';
+    fav.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21C12 21 4 14.6 4 8.8C4 6 6 4 8.7 4c1.3 0 2.5.6 3.3 1.6.8-1 2-1.6 3.3-1.6C18 4 20 6 20 8.8c0 5.8-8 12.2-8 12.2z"/></svg>';
     const key = favKey(item);
     fav.classList.toggle('fav-on', isFavored(key));
     fav.addEventListener('click', (e) => {
@@ -545,7 +545,17 @@
 
   /* ---------------- Viewer ---------------- */
   let viewerTimer = null;
+  let viewerItems = [];
+  let viewerIndex = -1;
+
   function openViewer(item) {
+    const items = state.cachedItems || [];
+    viewerItems = items;
+    viewerIndex = items.indexOf(item);
+    renderViewer(item);
+  }
+
+  function renderViewer(item) {
     const img = $('#m-viewer-img');
     const video = $('#m-viewer-video');
     img.classList.add('hidden');
@@ -557,10 +567,21 @@
     document.body.style.overflow = 'hidden';
     history.pushState({ viewer: true }, '');
 
+    if (viewerItems.length > 1) {
+      $('#m-viewer-prev').classList.toggle('hidden', viewerIndex <= 0);
+      $('#m-viewer-next').classList.toggle('hidden', viewerIndex >= viewerItems.length - 1);
+      const c = $('#m-viewer-counter');
+      c.textContent = `${viewerIndex + 1} / ${viewerItems.length}`;
+      c.classList.remove('hidden');
+    } else {
+      $('#m-viewer-prev').classList.add('hidden');
+      $('#m-viewer-next').classList.add('hidden');
+      $('#m-viewer-counter').classList.add('hidden');
+    }
+
     if (item.mime === 'video') {
       video.classList.remove('hidden');
       const url = videoUrl(item);
-      /* 用 fetch 绕过可能存在的 cookie 传递问题 */
       fetch(url, { credentials: 'same-origin' }).then(r => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.blob();
@@ -568,7 +589,6 @@
         video.src = URL.createObjectURL(blob);
         video.play().catch(() => {});
       }).catch(() => {
-        /* 降级：直接设置 src */
         video.src = url;
         video.play().catch(() => {});
       });
@@ -576,6 +596,13 @@
       img.classList.remove('hidden');
       img.src = rawUrl(item);
     }
+  }
+
+  function navViewer(delta) {
+    const idx = viewerIndex + delta;
+    if (idx < 0 || idx >= viewerItems.length) return;
+    viewerIndex = idx;
+    renderViewer(viewerItems[idx]);
   }
 
   function closeViewer() {
@@ -589,6 +616,8 @@
   }
 
   $('#m-viewer-close').addEventListener('click', closeViewer);
+  $('#m-viewer-prev').addEventListener('click', () => navViewer(-1));
+  $('#m-viewer-next').addEventListener('click', () => navViewer(1));
   $('#m-viewer').addEventListener('click', (e) => {
     if (e.target === $('#m-viewer') || e.target.classList.contains('m-viewer-body')) closeViewer();
   });

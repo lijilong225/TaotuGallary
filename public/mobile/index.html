@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/mobile/style.css?v=20260818e">
+  <link rel="stylesheet" href="/mobile/style.css?v=20260818f">
 </head>
 <body>
   <div id="m-login" class="m-login">
@@ -21,14 +21,14 @@
 
   <div id="m-main" class="hidden">
     <header class="m-titlebar">
-      <span class="m-brand">套图管理器</span>
-      <button id="m-fav-btn" class="m-title-btn" title="收藏">♥</button>
+      <span class="m-brand">套图管理器<span class="m-version-badge">v1.1.21</span></span>
+      <button id="m-fav-btn" class="m-title-btn" title="收藏"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21C12 21 4 14.6 4 8.8C4 6 6 4 8.7 4c1.3 0 2.5.6 3.3 1.6.8-1 2-1.6 3.3-1.6C18 4 20 6 20 8.8c0 5.8-8 12.2-8 12.2z"/></svg></button>
       <span id="m-user" class="m-user-name"></span>
       <button id="m-logout-btn" class="m-title-btn">退出</button>
     </header>
 
     <div class="m-pathbar">
-      <button id="m-menu-btn" class="m-menu-btn">☰</button>
+      <button id="m-menu-btn" class="m-menu-btn"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg></button>
       <span id="m-path-display" class="m-path-text">/</span>
     </div>
 
@@ -64,13 +64,16 @@
   </div>
 
   <div id="m-viewer" class="m-viewer hidden">
-    <button id="m-viewer-close" class="m-viewer-close">✕</button>
+    <button id="m-viewer-close" class="m-viewer-close"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+    <button id="m-viewer-prev" class="m-viewer-nav m-viewer-prev"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg></button>
+    <button id="m-viewer-next" class="m-viewer-nav m-viewer-next"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg></button>
+    <span id="m-viewer-counter" class="m-viewer-counter"></span>
     <div class="m-viewer-body">
       <img id="m-viewer-img" class="m-viewer-img" alt="">
       <video id="m-viewer-video" class="m-viewer-video hidden" controls playsinline preload="auto"></video>
     </div>
   </div>
 
-  <script src="/mobile/app.js?v=20260818e"></script>
+  <script src="/mobile/app.js?v=20260818f"></script>
 </body>
 </html>
