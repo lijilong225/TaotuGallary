@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/mobile/style.css?v=20260818c">
+  <link rel="stylesheet" href="/mobile/style.css?v=20260818d">
 </head>
 <body>
   <div id="m-login" class="m-login">
@@ -38,7 +38,10 @@
         <option value="time" selected>时间</option>
         <option value="name">名称</option>
       </select>
-      <button id="m-sort-order" class="m-sort-order-btn" title="切换排序方向">↓</button>
+      <select id="m-sort-order">
+        <option value="desc" selected>倒序</option>
+        <option value="asc">正序</option>
+      </select>
       <select id="m-time-group" class="m-time-group hidden">
         <option value="day">按天</option>
         <option value="month" selected>按月</option>
@@ -68,6 +71,6 @@
     </div>
   </div>
 
-  <script src="/mobile/app.js?v=20260818c"></script>
+  <script src="/mobile/app.js?v=20260818d"></script>
 </body>
 </html>

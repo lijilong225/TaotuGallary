@@ -595,7 +595,7 @@
 
   /* ---------------- Sortbar ---------------- */
   function sortOrderArrow() {
-    $('#m-sort-order').textContent = state.sortOrder === 'desc' ? '↓' : '↑';
+    $('#m-sort-order').value = state.sortOrder;
   }
 
   function syncSortbar() {
@@ -611,8 +611,8 @@
     reloadCurrent();
   });
 
-  $('#m-sort-order').addEventListener('click', () => {
-    state.sortOrder = state.sortOrder === 'desc' ? 'asc' : 'desc';
+  $('#m-sort-order').addEventListener('change', (e) => {
+    state.sortOrder = e.target.value;
     sortOrderArrow();
     reloadCurrent();
   });

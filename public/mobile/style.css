@@ -157,18 +157,6 @@ html, body {
   outline: none;
   flex-shrink: 0;
 }
-.m-sort-order-btn {
-  width: 32px;
-  height: 28px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  font-size: 14px;
-  color: #333;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.m-sort-order-btn:active { background: #eee; }
 .m-time-group { margin-left: auto; font-size: 12px; }
 
 /* ---------------- Timeline header ---------------- */
