@@ -269,17 +269,16 @@ html, body {
   flex: 1;
 }
 
-/* Masonry / waterfall */
+/* Media grid: row-first fill (left to right, top to bottom) */
 .m-masonry {
-  column-count: 2;
-  column-gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
 @media (min-width: 600px) {
-  .m-masonry { column-count: 3; }
+  .m-masonry { grid-template-columns: repeat(3, 1fr); }
 }
 .m-item {
-  break-inside: avoid;
-  margin-bottom: 8px;
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
