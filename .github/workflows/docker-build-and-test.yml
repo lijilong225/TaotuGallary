@@ -6,7 +6,6 @@ permissions:
 
 on:
   workflow_dispatch: {}
-  push:
 
 jobs:
   build-and-test:
