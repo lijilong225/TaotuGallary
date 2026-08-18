@@ -568,7 +568,10 @@
     document.body.style.overflow = 'hidden';
     history.pushState({ viewer: true }, '');
 
-    if (viewerItems.length > 1) {
+    if (item.mime === 'video') {
+      $('#m-viewer-prev').classList.add('hidden');
+      $('#m-viewer-next').classList.add('hidden');
+    } else if (viewerItems.length > 1) {
       $('#m-viewer-prev').classList.toggle('hidden', viewerIndex <= 0);
       $('#m-viewer-next').classList.toggle('hidden', viewerIndex >= viewerItems.length - 1);
     } else {

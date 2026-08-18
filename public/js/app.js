@@ -800,6 +800,8 @@ function applyThumbSize() {
       $('#lb-video-wrap').classList.remove('hidden');
       $('#lb-zoom-toggle').classList.add('hidden');
       $('#lb-download').classList.add('hidden');
+      $('#lb-prev').classList.add('hidden');
+      $('#lb-next').classList.add('hidden');
       $('#lightbox').classList.remove('video-playing');
       vcCenter.classList.remove('hidden');
       const video = $('#lb-video');
@@ -813,6 +815,8 @@ function applyThumbSize() {
       $('#lb-img').classList.remove('hidden');
       $('#lb-zoom-toggle').classList.remove('hidden');
       $('#lb-download').classList.remove('hidden');
+      $('#lb-prev').classList.remove('hidden');
+      $('#lb-next').classList.remove('hidden');
       $('#lb-img').src = rawUrl(item);
     }
     resetZoom();
