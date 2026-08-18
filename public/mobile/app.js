@@ -456,18 +456,32 @@
     const video = $('#m-viewer-video');
     img.classList.add('hidden');
     video.classList.add('hidden');
+    video.removeAttribute('src');
+    video.removeAttribute('srcObject');
 
-    if (item.mime === 'video') {
-      video.src = videoUrl(item);
-      video.classList.remove('hidden');
-      video.play().catch(() => {});
-    } else {
-      img.src = rawUrl(item);
-      img.classList.remove('hidden');
-    }
     $('#m-viewer').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     history.pushState({ viewer: true }, '');
+
+    if (item.mime === 'video') {
+      video.classList.remove('hidden');
+      const url = videoUrl(item);
+      /* 用 fetch 绕过可能存在的 cookie 传递问题 */
+      fetch(url, { credentials: 'same-origin' }).then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.blob();
+      }).then(blob => {
+        video.src = URL.createObjectURL(blob);
+        video.play().catch(() => {});
+      }).catch(() => {
+        /* 降级：直接设置 src */
+        video.src = url;
+        video.play().catch(() => {});
+      });
+    } else {
+      img.classList.remove('hidden');
+      img.src = rawUrl(item);
+    }
   }
 
   function closeViewer() {
