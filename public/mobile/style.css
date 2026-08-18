@@ -129,6 +129,65 @@ html, body {
   flex: 1;
 }
 
+/* ---------------- Sort bar ---------------- */
+.m-sortbar {
+  position: fixed;
+  top: 88px;
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: #fff;
+  border-bottom: 1px solid #e2e1dc;
+  z-index: 98;
+  font-size: 13px;
+}
+.m-sort-label { font-size: 12px; color: #999; flex-shrink: 0; }
+.m-sortbar select {
+  height: 28px;
+  padding: 0 6px;
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  color: #333;
+  outline: none;
+  flex-shrink: 0;
+}
+.m-sort-order-btn {
+  width: 32px;
+  height: 28px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.m-sort-order-btn:active { background: #eee; }
+.m-time-group { margin-left: auto; font-size: 12px; }
+
+/* ---------------- Timeline header ---------------- */
+.m-timeline-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 18px 2px 10px;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #f7efd8 0%, #e9d9b0 100%);
+  border: 1px solid #b79a5e;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(60,45,20,.15);
+}
+.m-timeline-header:first-child { margin-top: 0; }
+.m-th-date { font-size: 14px; font-weight: 700; color: #6b4f1f; }
+.m-th-count { font-size: 12px; color: #8a6d1a; }
+.m-th-line { flex: 1; border-top: 1px dashed rgba(143,116,52,.45); }
+
 /* ---------------- Content ---------------- */
 .m-content {
   position: fixed;
@@ -140,6 +199,7 @@ html, body {
   padding: 10px;
   -webkit-overflow-scrolling: touch;
 }
+.m-content.has-sortbar { top: 128px; }
 
 /* Folder grid */
 .m-folder-grid {

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>套图管理器</title>
-  <link rel="stylesheet" href="/mobile/style.css?v=20260818a">
+  <link rel="stylesheet" href="/mobile/style.css?v=20260818b">
 </head>
 <body>
   <div id="m-login" class="m-login">
@@ -32,6 +32,20 @@
       <span id="m-path-display" class="m-path-text">/</span>
     </div>
 
+    <div id="m-sortbar" class="m-sortbar hidden">
+      <span class="m-sort-label">排序</span>
+      <select id="m-sort-by">
+        <option value="time" selected>时间</option>
+        <option value="name">名称</option>
+      </select>
+      <button id="m-sort-order" class="m-sort-order-btn" title="切换排序方向">↓</button>
+      <select id="m-time-group" class="m-time-group hidden">
+        <option value="day">按天</option>
+        <option value="month" selected>按月</option>
+        <option value="year">按年</option>
+      </select>
+    </div>
+
     <div id="m-content" class="m-content">
       <div id="m-folders" class="m-folder-grid"></div>
       <div id="m-media" class="m-masonry"></div>
@@ -54,6 +68,6 @@
     </div>
   </div>
 
-  <script src="/mobile/app.js?v=20260818a"></script>
+  <script src="/mobile/app.js?v=20260818b"></script>
 </body>
 </html>

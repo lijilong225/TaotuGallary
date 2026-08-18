@@ -9,9 +9,11 @@
     favKey: null,    // 'favorites' view marker
     currentPath: '',
     currentMode: 'dir', // 'dir' | 'archive' | 'favorites'
+    cachedItems: null,
     thumbSize: 'm',
     sortBy: 'time',
     sortOrder: 'desc',
+    timeGroup: 'month',
   };
 
   const $ = (s) => document.querySelector(s);
@@ -52,6 +54,40 @@
       return `/api/video?path=${p}&entry=${encodeURIComponent(item.entry)}`;
     }
     return `/api/video?path=${p}`;
+  }
+
+  function groupByTime(items, level) {
+    const groups = {};
+    items.forEach(item => {
+      const d = new Date(item.mtime);
+      let key;
+      if (level === 'year') {
+        key = String(d.getFullYear());
+      } else if (level === 'month') {
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      } else {
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    const keys = Object.keys(groups).sort();
+    if (state.sortOrder === 'desc') keys.reverse();
+    return keys.map(k => ({ key: k, items: groups[k] }));
+  }
+
+  function formatTimeHeader(mtime, level) {
+    const d = new Date(mtime);
+    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+    if (level === 'year') return `${d.getFullYear()}年`;
+    if (level === 'month') return `${d.getFullYear()}年${d.getMonth() + 1}月`;
+    const today = new Date();
+    const dayStr = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+    if (d.toDateString() === today.toDateString()) return `今天 · ${dayStr} 星期${weekdays[d.getDay()]}`;
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (d.toDateString() === yesterday.toDateString()) return `昨天 · ${dayStr} 星期${weekdays[d.getDay()]}`;
+    return `${dayStr} 星期${weekdays[d.getDay()]}`;
   }
 
   function favKey(item) {
@@ -257,6 +293,11 @@
       const mediaItems = (data.media || []).map((m) => ({
         type: 'archive', mime: m.mime, path: relPath, entry: m.entry, name: m.name, mtime: m.mtime,
       }));
+      if (mediaItems.length) {
+        showSortbar();
+      } else {
+        hideSortbar();
+      }
       renderMedia(mediaItems);
     } catch (e) {
       renderEmpty(e.message);
@@ -307,6 +348,12 @@
       folderGrid.style.display = '';
     }
 
+    if (media.length) {
+      showSortbar();
+    } else {
+      hideSortbar();
+    }
+
     renderMedia(media);
   }
 
@@ -315,7 +362,24 @@
     $('#m-loading').classList.add('hidden');
     $('#m-folders').innerHTML = '';
     $('#m-folders').style.display = 'none';
+    if (media.length) {
+      showSortbar();
+    } else {
+      hideSortbar();
+    }
     renderMedia(media);
+  }
+
+  function showSortbar() {
+    const sb = $('#m-sortbar');
+    sb.classList.remove('hidden');
+    $('#m-content').classList.add('has-sortbar');
+    syncSortbar();
+  }
+
+  function hideSortbar() {
+    $('#m-sortbar').classList.add('hidden');
+    $('#m-content').classList.remove('has-sortbar');
   }
 
   function makeFolderCard(f) {
@@ -344,14 +408,40 @@
   }
 
   function renderMedia(items) {
+    state.cachedItems = items;
+    if (state.sortBy === 'time') return renderTimeline(items);
     const mediaBox = $('#m-media');
     mediaBox.innerHTML = '';
+    mediaBox.className = 'm-masonry';
     if (!items || !items.length) {
       $('#m-empty').classList.remove('hidden');
       $('#m-empty').textContent = '此目录为空';
       return;
     }
     items.forEach((item) => mediaBox.appendChild(makeMediaItem(item)));
+    lazyLoad();
+  }
+
+  function renderTimeline(items) {
+    const groups = groupByTime(items, state.timeGroup);
+    const mediaBox = $('#m-media');
+    mediaBox.innerHTML = '';
+    mediaBox.className = '';
+    if (!groups.length) {
+      $('#m-empty').classList.remove('hidden');
+      $('#m-empty').textContent = '此目录为空';
+      return;
+    }
+    groups.forEach(group => {
+      const header = document.createElement('div');
+      header.className = 'm-timeline-header';
+      header.innerHTML = `<span class="m-th-date">${formatTimeHeader(group.items[0].mtime, state.timeGroup)}</span><span class="m-th-count">${group.items.length} 个文件</span><span class="m-th-line"></span>`;
+      mediaBox.appendChild(header);
+      const row = document.createElement('div');
+      row.className = 'm-masonry m-timeline-row';
+      group.items.forEach((item) => row.appendChild(makeMediaItem(item)));
+      mediaBox.appendChild(row);
+    });
     lazyLoad();
   }
 
@@ -499,8 +589,48 @@
     if (e.target === $('#m-viewer') || e.target.classList.contains('m-viewer-body')) closeViewer();
   });
 
+  /* ---------------- Sortbar ---------------- */
+  function sortOrderArrow() {
+    $('#m-sort-order').textContent = state.sortOrder === 'desc' ? '↓' : '↑';
+  }
+
+  function syncSortbar() {
+    $('#m-sort-by').value = state.sortBy;
+    $('#m-time-group').value = state.timeGroup;
+    $('#m-time-group').classList.toggle('hidden', state.sortBy !== 'time');
+    sortOrderArrow();
+  }
+
+  $('#m-sort-by').addEventListener('change', (e) => {
+    state.sortBy = e.target.value;
+    syncSortbar();
+    reloadCurrent();
+  });
+
+  $('#m-sort-order').addEventListener('click', () => {
+    state.sortOrder = state.sortOrder === 'desc' ? 'asc' : 'desc';
+    sortOrderArrow();
+    reloadCurrent();
+  });
+
+  $('#m-time-group').addEventListener('change', (e) => {
+    state.timeGroup = e.target.value;
+    if (state.cachedItems) renderMedia(state.cachedItems);
+  });
+
+  function reloadCurrent() {
+    if (state.currentMode === 'favorites') {
+      openFavorites();
+    } else if (state.currentMode === 'archive') {
+      openArchive(state.currentPath);
+    } else {
+      openDirectory(state.currentPath, 1);
+    }
+  }
+
   /* ---------------- UI helpers ---------------- */
   function showLoading() {
+    hideSortbar();
     $('#m-loading').classList.remove('hidden');
     $('#m-empty').classList.add('hidden');
     $('#m-folders').innerHTML = '';
@@ -509,10 +639,12 @@
   }
 
   function renderEmpty(msg) {
+    hideSortbar();
     $('#m-loading').classList.add('hidden');
     $('#m-folders').innerHTML = '';
     $('#m-folders').style.display = 'none';
     $('#m-media').innerHTML = '';
+    state.cachedItems = null;
     $('#m-empty').textContent = msg || '暂无内容';
     $('#m-empty').classList.remove('hidden');
   }
