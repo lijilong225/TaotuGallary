@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>套图管理器</title>
+  <link rel="stylesheet" href="/mobile/style.css?v=20260817m">
+</head>
+<body>
+  <div id="m-login" class="m-login">
+    <div class="m-login-box">
+      <h1>套图管理器</h1>
+      <form id="m-login-form">
+        <input type="text" id="m-username" placeholder="用户名" autocomplete="username" required>
+        <input type="password" id="m-password" placeholder="密码" autocomplete="current-password" required>
+        <div id="m-login-error" class="m-error hidden"></div>
+        <button type="submit" class="m-btn-primary">登录</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="m-main" class="hidden">
+    <header class="m-titlebar">
+      <span class="m-brand">套图管理器</span>
+      <button id="m-fav-btn" class="m-title-btn" title="收藏">♥</button>
+      <span id="m-user" class="m-user-name"></span>
+      <button id="m-logout-btn" class="m-title-btn">退出</button>
+    </header>
+
+    <div class="m-pathbar">
+      <button id="m-menu-btn" class="m-menu-btn">☰</button>
+      <span id="m-path-display" class="m-path-text">/</span>
+    </div>
+
+    <div id="m-content" class="m-content">
+      <div id="m-folders" class="m-folder-grid"></div>
+      <div id="m-media" class="m-masonry"></div>
+      <div id="m-empty" class="m-empty hidden">此目录为空</div>
+      <div id="m-loading" class="m-loading hidden">加载中...</div>
+    </div>
+  </div>
+
+  <div id="m-drawer-bg" class="m-drawer-bg hidden"></div>
+  <div id="m-drawer" class="m-drawer">
+    <div class="m-drawer-header">目录</div>
+    <div id="m-tree" class="m-tree"></div>
+  </div>
+
+  <div id="m-viewer" class="m-viewer hidden">
+    <button id="m-viewer-close" class="m-viewer-close">✕</button>
+    <div class="m-viewer-body">
+      <img id="m-viewer-img" class="m-viewer-img" alt="">
+      <video id="m-viewer-video" class="m-viewer-video hidden" controls playsinline></video>
+    </div>
+  </div>
+
+  <script src="/mobile/app.js?v=20260817m"></script>
+</body>
+</html>

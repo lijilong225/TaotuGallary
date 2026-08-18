@@ -62,6 +62,11 @@ async function init() {
     res.sendFile(path.join(publicDir, 'index.html'));
   });
 
+  app.get('/m', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(publicDir, 'mobile', 'index.html'));
+  });
+
   // 404处理
   app.use((req, res) => {
     res.status(404).json({ error: '未找到该请求' });
