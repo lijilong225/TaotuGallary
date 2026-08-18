@@ -151,29 +151,33 @@
         (node.type === 'dir' ? ' m-tree-node-dir' : ' m-tree-node-file') +
         (hasChildren ? '' : ' leaf');
       el.style.paddingLeft = (16 + depth * 16) + 'px';
-      el.innerHTML = `<span class="m-tree-label">${escapeHtml(node.name)}</span>`;
 
+      const caret = document.createElement('span');
+      caret.className = 'm-tree-caret' + (hasChildren ? '' : ' placeholder');
+      caret.textContent = '▸';
+      el.appendChild(caret);
+
+      const label = document.createElement('span');
+      label.className = 'm-tree-label';
+      label.textContent = node.name;
+      el.appendChild(label);
+
+      if (node.type === 'dir') {
+        el.addEventListener('click', (ev) => {
+          if (ev.target === caret) return;
+          selectTreeDir(node.rel, node, el);
+        });
+      }
       if (hasChildren) {
         const childWrap = buildTreeEl(node.children, depth + 1);
         if (childWrap) {
           el.appendChild(childWrap);
-          const label = el.querySelector('.m-tree-label');
-          label.addEventListener('click', (ev) => {
+          caret.addEventListener('click', (ev) => {
             ev.stopPropagation();
             childWrap.classList.toggle('open');
             el.classList.toggle('expanded');
           });
         }
-        if (node.type === 'dir') {
-          el.addEventListener('click', (ev) => {
-            if (ev.target === label) return;
-            selectTreeDir(node.rel, node, el);
-          });
-        }
-      } else if (node.type === 'dir') {
-        el.addEventListener('click', () => {
-          selectTreeDir(node.rel, node, el);
-        });
       }
 
       wrap.appendChild(el);

@@ -389,6 +389,7 @@ html, body {
   cursor: pointer;
   padding: 10px 16px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   font-size: 14px;
   color: #333;
@@ -399,22 +400,19 @@ html, body {
   background: #fafaf8;
   border-bottom: 1px solid #eee;
 }
-.m-tree-node-dir::before {
-  content: '▸';
-  margin-right: 8px;
-  color: #bbb;
-  font-size: 13px;
-  transition: transform .15s;
+.m-tree-caret {
   display: inline-block;
+  width: 16px;
+  margin-right: 4px;
+  color: #bbb;
+  font-size: 12px;
+  text-align: center;
+  transition: transform .15s;
+  flex-shrink: 0;
 }
-.m-tree-node-dir.expanded::before { transform: rotate(90deg); }
-.m-tree-node-file::before {
-  content: '▸';
-  margin-right: 8px;
-  color: transparent;
-  font-size: 13px;
-}
-.m-tree-children { display: none; }
+.m-tree-caret.placeholder { color: transparent; }
+.m-tree-node.expanded > .m-tree-caret { transform: rotate(90deg); }
+.m-tree-children { display: none; flex: 0 0 100%; }
 .m-tree-children.open { display: block; }
 .m-tree-children .m-tree-node { padding-left: 32px; }
 .m-tree-children .m-tree-children .m-tree-node { padding-left: 48px; }
