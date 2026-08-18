@@ -562,6 +562,7 @@
     video.classList.add('hidden');
     video.removeAttribute('src');
     video.removeAttribute('srcObject');
+    delete video.dataset.fallback;
 
     $('#m-viewer').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
@@ -576,18 +577,25 @@
     }
 
     if (item.mime === 'video') {
-      video.classList.remove('hidden');
       const url = videoUrl(item);
-      fetch(url, { credentials: 'same-origin' }).then(r => {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.blob();
-      }).then(blob => {
-        video.src = URL.createObjectURL(blob);
-        video.play().catch(() => {});
-      }).catch(() => {
-        video.src = url;
-        video.play().catch(() => {});
-      });
+      /* 优先直接设置流式 src：同源请求会自动携带 session cookie，
+         服务器支持 Range 流式传输，浏览器可边下边播 */
+      video.classList.remove('hidden');
+      const onError = () => {
+        video.dataset.fallback = '1';
+        fetch(url, { credentials: 'same-origin' }).then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.blob();
+        }).then(blob => {
+          video.removeAttribute('src');
+          video.src = URL.createObjectURL(blob);
+          video.play().catch(() => {});
+        }).catch(() => {});
+      };
+      video.addEventListener('error', onError, { once: true });
+      video.src = url;
+      video.load();
+      video.play().catch(() => {});
     } else {
       img.classList.remove('hidden');
       img.src = rawUrl(item);
