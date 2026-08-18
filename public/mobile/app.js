@@ -570,13 +570,9 @@
     if (viewerItems.length > 1) {
       $('#m-viewer-prev').classList.toggle('hidden', viewerIndex <= 0);
       $('#m-viewer-next').classList.toggle('hidden', viewerIndex >= viewerItems.length - 1);
-      const c = $('#m-viewer-counter');
-      c.textContent = `${viewerIndex + 1} / ${viewerItems.length}`;
-      c.classList.remove('hidden');
     } else {
       $('#m-viewer-prev').classList.add('hidden');
       $('#m-viewer-next').classList.add('hidden');
-      $('#m-viewer-counter').classList.add('hidden');
     }
 
     if (item.mime === 'video') {

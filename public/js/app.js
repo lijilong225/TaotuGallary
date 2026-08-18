@@ -793,7 +793,7 @@ function applyThumbSize() {
   function updateLightbox() {
     const item = state.imageList[state.lbIndex];
     if (!item) return;
-    $('#lb-counter').textContent = `${state.lbIndex + 1} / ${state.imageList.length}`;
+    
 
     if (item.mime === 'video') {
       $('#lb-img').classList.add('hidden');

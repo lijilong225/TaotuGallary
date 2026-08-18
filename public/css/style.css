@@ -1030,7 +1030,6 @@ body {
 
 /* 全屏播放时隐藏所有 Overlay 按钮 */
 #lightbox:fullscreen .lb-close,
-#lightbox:fullscreen .lb-counter,
 #lightbox:fullscreen .lb-nav,
 #lightbox:fullscreen .lb-zoom-toggle,
 #lightbox:fullscreen .lb-fav,
@@ -1159,23 +1158,7 @@ body {
 .lb-corner-btn:hover { filter: brightness(1.05); }
 .lb-corner-btn:active { box-shadow: inset 0 2px 5px rgba(0,0,0,.25); }
 
-.lb-counter {
-  position: absolute;
-  top: 26px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: #6b5a3c;
-  font-size: 13px;
-  font-weight: 700;
-  z-index: 40;
-  letter-spacing: 1px;
-  text-shadow: 0 1px 0 rgba(255,255,255,.7);
-  background: rgba(255,255,255,.75);
-  border: 1px solid rgba(0,0,0,.12);
-  padding: 3px 12px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.12);
-}
+
 
 .lb-btn {
   width: 40px;
