@@ -124,6 +124,7 @@
 
   /* ---------------- Auth ---------------- */
   function showLogin() {
+    $('#boot-loading').classList.add('hidden');
     $('#main-view').classList.add('hidden');
     $('#login-view').classList.remove('hidden');
     state.user = null;
@@ -132,6 +133,7 @@
   }
 
   async function showMain(user) {
+    $('#boot-loading').classList.add('hidden');
     state.user = user;
     $('#login-view').classList.add('hidden');
     $('#main-view').classList.remove('hidden');
@@ -174,6 +176,7 @@
   });
 
   $('#btn-logout').addEventListener('click', async () => {
+    if (!confirm('确定要退出登录吗？')) return;
     try { await api('/api/logout', { method: 'POST' }); } catch {}
     showLogin();
   });
@@ -1216,11 +1219,6 @@ function applyThumbSize() {
     } else if (target.requestFullscreen) {
       target.requestFullscreen();
     }
-  });
-
-  document.addEventListener('fullscreenchange', () => {
-    if ($('#lb-video-wrap').classList.contains('hidden')) return;
-    /* 全屏时不再显示进度条和全屏按钮（CSS 处理），暂停图标不受影响 */
   });
 
   document.addEventListener('keydown', (e) => {

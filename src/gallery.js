@@ -9,6 +9,7 @@ const { probeVideoSize, extractVideoToCache } = require('./thumbnail');
 const TREE_CACHE_TTL = 30 * 1000;
 const COUNT_CACHE_TTL = 30 * 1000;
 let treeCache = { data: null, ts: 0 };
+let pendingTree = null;
 const childCountCache = new Map();
 
 function treeCacheIsFresh() {
@@ -29,7 +30,15 @@ function toRel(p) {
 function safeResolve(userPath) {
   const target = path.resolve(config.galleryRoot, userPath || '.');
   const rel = path.relative(config.galleryRoot, target);
-  if (rel.startsWith('..') || path.isAbsolute(rel)) throw new Error('invalid path');
+  if (rel.startsWith('..')) throw new Error('invalid path');
+  if (!fs.existsSync(target)) throw new Error('file not found');
+  try {
+    const real = fs.realpathSync(target);
+    const realRel = path.relative(fs.realpathSync(config.galleryRoot), real);
+    if (realRel.startsWith('..')) throw new Error('invalid path');
+  } catch (e) {
+    if (e.message === 'invalid path') throw e;
+  }
   return target;
 }
 
@@ -52,6 +61,7 @@ async function isDirectory(p) {
 
 async function buildTree() {
   if (treeCacheIsFresh()) return treeCache.data;
+  if (pendingTree) return pendingTree;
 
   async function walk(dir) {
     let names;
@@ -90,9 +100,14 @@ async function buildTree() {
     return out;
   }
 
-  treeCache.data = await walk(config.galleryRoot);
-  treeCache.ts = Date.now();
-  return treeCache.data;
+  pendingTree = walk(config.galleryRoot);
+  try {
+    treeCache.data = await pendingTree;
+    treeCache.ts = Date.now();
+    return treeCache.data;
+  } finally {
+    pendingTree = null;
+  }
 }
 
 async function listGalleryDir(userPath, pageNum = 1, pageSize = 50, sortBy = 'name', sortOrder = 'asc') {

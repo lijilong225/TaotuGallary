@@ -28,7 +28,11 @@ const config = {
   port: parseInt(process.env.PORT || '8080', 10),
   galleryRoot: path.resolve(process.env.GALLERY_ROOT || '/gallery'),
   adminUser: process.env.ADMIN_USER || 'admin',
-  adminPassword: process.env.ADMIN_PASSWORD || 'admin',
+  adminPassword: process.env.ADMIN_PASSWORD || (() => {
+    const pw = require('crypto').randomBytes(4).toString('hex');
+    console.warn(`\n⚠ 未设置 ADMIN_PASSWORD，已自动生成随机密码: ${pw}\n`);
+    return pw;
+  })(),
   sessionSecret: loadOrCreateSecret(),
   thumbDir: process.env.THUMB_DIR || path.join(ROOT_DIR, 'data', 'thumbs'),
   videoThumbDir: process.env.VIDEO_THUMB_DIR || path.join(ROOT_DIR, 'data', 'videothumbs'),

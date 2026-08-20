@@ -348,7 +348,6 @@ body {
   left: 0;
   right: 0;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
   padding: 10px;
 }
 .m-content.has-sortbar { top: 132px; }
@@ -623,7 +622,6 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 8px 0;
-  -webkit-overflow-scrolling: touch;
 }
 .m-tree-node {
   cursor: pointer;
@@ -728,3 +726,37 @@ body {
   object-fit: contain;
   background: #000;
 }
+.m-viewer-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+.m-spinner-ring {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255,255,255,.25);
+  border-top-color: #9cc270;
+  border-radius: 50%;
+  animation: m-spin .8s linear infinite;
+}
+@keyframes m-spin {
+  to { transform: rotate(360deg); }
+}
+.m-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background: rgba(0,0,0,.75);
+  color: #fff;
+  font-size: 14px;
+  text-align: center;
+  max-width: 80%;
+  transition: opacity .25s;
+}
+.m-toast.hidden { opacity: 0; }

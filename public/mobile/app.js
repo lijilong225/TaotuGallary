@@ -501,6 +501,13 @@
   }
 
   /* ---------------- Favorites ---------------- */
+  function showToast(msg) {
+    const t = $('#m-toast');
+    t.textContent = msg;
+    t.classList.remove('hidden');
+    setTimeout(() => t.classList.add('hidden'), 2000);
+  }
+
   async function toggleFav(item, el) {
     const key = favKey(item);
     try {
@@ -524,6 +531,8 @@
       }
     } catch (e) {
       console.error('收藏操作失败', e);
+      if (el) el.classList.toggle('fav-on', data && data.favorited);
+      showToast('收藏操作失败');
     }
   }
 
@@ -611,8 +620,10 @@
   function renderViewer(item) {
     const img = $('#m-viewer-img');
     const video = $('#m-viewer-video');
+    const spinner = $('#m-viewer-spinner');
     img.classList.add('hidden');
     video.classList.add('hidden');
+    spinner.classList.remove('hidden');
     video.removeAttribute('src');
     video.removeAttribute('srcObject');
     delete video.dataset.fallback;
@@ -625,6 +636,7 @@
     history.pushState({ viewer: true }, '');
 
     if (item.mime === 'video') {
+      spinner.classList.add('hidden');
       video.classList.remove('hidden');
       const url = videoUrl(item);
       const onError = () => {
@@ -650,11 +662,13 @@
       img.onload = () => {
         if (img.dataset.loaded === '1') return;
         img.dataset.loaded = '1';
+        $('#m-viewer-spinner').classList.add('hidden');
         initViewerImage();
       };
       img.onerror = () => {
         if (img.dataset.loaded === '1') return;
         img.dataset.loaded = '1';
+        $('#m-viewer-spinner').classList.add('hidden');
       };
       img.src = rawUrl(item);
       if (img.complete && img.naturalWidth > 0) {

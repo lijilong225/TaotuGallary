@@ -10,7 +10,7 @@ const loginLimiter = rateLimit({
   legacyHeaders: false,
   skip: (req) => {
     // 跳过非登录请求
-    return req.method !== 'POST' || !req.path.includes('/login');
+    return req.method !== 'POST' || req.path !== '/api/login';
   },
   handler: (req, res) => {
     logger.warn('登录尝试过多', { ip: req.ip, path: req.path });

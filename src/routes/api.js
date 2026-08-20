@@ -210,6 +210,12 @@ async function sendVideoStream(req, res, filePath) {
   res.setHeader('Content-Type', type);
   res.setHeader('Accept-Ranges', 'bytes');
 
+  function pipeStream(stream) {
+    stream.on('error', () => {});
+    res.on('close', () => stream.destroy());
+    stream.pipe(res);
+  }
+
   if (range) {
     const m = /bytes=(\d*)-(\d*)/.exec(range);
     if (m) {
@@ -224,13 +230,12 @@ async function sendVideoStream(req, res, filePath) {
       res.status(206);
       res.setHeader('Content-Range', `bytes ${start}-${end}/${total}`);
       res.setHeader('Content-Length', end - start + 1);
-      const stream = fs.createReadStream(filePath, { start, end });
-      stream.pipe(res);
+      pipeStream(fs.createReadStream(filePath, { start, end }));
       return;
     }
   }
   res.setHeader('Content-Length', total);
-  fs.createReadStream(filePath).pipe(res);
+  pipeStream(fs.createReadStream(filePath));
 }
 
 router.get('/video', requireAuth, async (req, res, next) => {
