@@ -714,12 +714,23 @@ body {
   justify-content: center;
   overflow: hidden;
   touch-action: none;
+  position: relative;
 }
-.m-viewer-img {
+.m-viewer-img,
+.m-viewer-img-bg {
+  position: absolute;
+  inset: 0;
+  margin: auto;
   display: block;
   transform-origin: center center;
   max-width: none;
   max-height: none;
+}
+.m-viewer-img {
+  z-index: 2;
+}
+.m-viewer-img-bg {
+  z-index: 1;
 }
 .m-viewer-video {
   width: 100%;
