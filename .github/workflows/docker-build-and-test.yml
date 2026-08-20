@@ -98,5 +98,10 @@ jobs:
       - name: Push version tag
         if: github.ref == 'refs/heads/master'
         run: |
-          git tag ${{ env.IMAGE_VERSION }}
-          git push origin ${{ env.IMAGE_VERSION }}
+          TAG=${{ env.IMAGE_VERSION }}
+          git tag "$TAG" 2>/dev/null && echo "Created tag $TAG" || echo "Tag $TAG already exists locally"
+          if git push origin "$TAG" 2>/dev/null; then
+            echo "Pushed tag $TAG"
+          else
+            echo "Tag $TAG already exists on remote, skipping push"
+          fi
