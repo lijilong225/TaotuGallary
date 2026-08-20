@@ -719,8 +719,8 @@ body {
 .m-viewer-img,
 .m-viewer-img-bg {
   position: absolute;
-  inset: 0;
-  margin: auto;
+  left: 50%;
+  top: 50%;
   display: block;
   transform-origin: center center;
   max-width: none;

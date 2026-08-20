@@ -582,11 +582,11 @@
 
   function applyViewerTransform() {
     const img = $('#m-viewer-img');
-    img.style.transform = `translate(${viewerTranslateX}px, ${viewerTranslateY}px) scale(${viewerScale})`;
+    img.style.transform = `translate(calc(-50% + ${viewerTranslateX}px), calc(-50% + ${viewerTranslateY}px)) scale(${viewerScale})`;
   }
 
   function applyTransform(img, x, y, s) {
-    img.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+    img.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${s})`;
   }
 
   function fitScaleFor(nw, nh) {
