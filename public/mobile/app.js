@@ -570,6 +570,12 @@
   let viewerPinchStartDist = 0;
   let viewerPinchStartScale = 1;
   let viewerBlobUrl = null;
+  let viewerAnimating = false;
+  let viewerFitDrag = false;
+  let viewerSwipeOffset = 0;
+  let viewerSlideInDir = 0;
+
+  const VIEWER_ANIM_MS = 280;
 
   function applyViewerTransform() {
     const img = $('#m-viewer-img');
@@ -608,6 +614,21 @@
     viewerTranslateX = 0;
     viewerTranslateY = 0;
     applyViewerTransform();
+
+    const slideIn = img.dataset.slideIn;
+    if (slideIn) {
+      img.dataset.slideIn = '';
+      const fromX = parseInt(slideIn, 10) * window.innerWidth;
+      viewerTranslateX = fromX;
+      viewerTranslateY = 0;
+      img.style.transition = 'none';
+      applyViewerTransform();
+      img.getBoundingClientRect();
+      img.style.transition = `transform ${VIEWER_ANIM_MS}ms cubic-bezier(.2,.8,.3,1)`;
+      viewerTranslateX = 0;
+      applyViewerTransform();
+      setTimeout(() => { img.style.transition = ''; }, VIEWER_ANIM_MS);
+    }
   }
 
   function openViewer(item) {
@@ -659,6 +680,12 @@
     } else {
       img.classList.remove('hidden');
       img.dataset.loaded = '0';
+      if (viewerSlideInDir) {
+        img.dataset.slideIn = String(viewerSlideInDir);
+        viewerSlideInDir = 0;
+      } else {
+        delete img.dataset.slideIn;
+      }
       img.onload = () => {
         if (img.dataset.loaded === '1') return;
         img.dataset.loaded = '1';
@@ -690,16 +717,50 @@
     video.removeAttribute('src');
     video.load();
     if (viewerBlobUrl) { URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl = null; }
-    $('#m-viewer-img').src = '';
-    delete $('#m-viewer-img').dataset.loaded;
+    const img = $('#m-viewer-img');
+    img.src = '';
+    delete img.dataset.loaded;
+    delete img.dataset.slideIn;
+    img.style.transition = '';
+    viewerAnimating = false;
+    viewerFitDrag = false;
+    viewerSwipeOffset = 0;
+    viewerSlideInDir = 0;
     $('#m-viewer').classList.add('hidden');
     document.body.style.overflow = '';
   }
 
   /* ---------- Viewer touch gestures ---------- */
+  function animateViewerOut(dir) {
+    const img = $('#m-viewer-img');
+    const toX = dir > 0 ? -window.innerWidth : window.innerWidth;
+    viewerAnimating = true;
+    viewerSlideInDir = dir;
+    img.style.transition = `transform ${VIEWER_ANIM_MS}ms cubic-bezier(.2,.8,.3,1)`;
+    viewerTranslateX = toX;
+    viewerTranslateY = 0;
+    applyViewerTransform();
+    setTimeout(() => {
+      img.style.transition = '';
+      navViewer(dir);
+      viewerAnimating = false;
+    }, VIEWER_ANIM_MS);
+  }
+
+  function animateViewerSnapBack() {
+    const img = $('#m-viewer-img');
+    viewerSlideInDir = 0;
+    img.style.transition = `transform ${VIEWER_ANIM_MS}ms cubic-bezier(.2,.8,.3,1)`;
+    viewerTranslateX = 0;
+    viewerTranslateY = 0;
+    applyViewerTransform();
+    setTimeout(() => { img.style.transition = ''; }, VIEWER_ANIM_MS);
+  }
+
   function onViewerTouchStart(e) {
     if (e.target.tagName === 'VIDEO') return;
     if (e.target.closest('#m-viewer-close')) return;
+    if (viewerAnimating) { e.preventDefault(); return; }
     e.preventDefault();
     const t = e.touches;
     if (t.length === 1) {
@@ -710,9 +771,12 @@
       viewerLastTouchX = t[0].clientX;
       viewerLastTouchY = t[0].clientY;
       viewerTouchStartTime = Date.now();
+      viewerFitDrag = Math.abs(viewerScale - viewerMinScale) < 0.01;
+      viewerSwipeOffset = 0;
     } else if (t.length === 2) {
       viewerIsPinching = true;
       viewerIsDragging = false;
+      viewerFitDrag = false;
       viewerPinchStartDist = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
       viewerPinchStartScale = viewerScale;
     }
@@ -729,12 +793,19 @@
       clampViewerPan();
       applyViewerTransform();
     } else if (viewerIsDragging && t.length === 1) {
-      const dx = t[0].clientX - viewerLastTouchX;
-      const dy = t[0].clientY - viewerLastTouchY;
-      viewerTranslateX += dx;
-      viewerTranslateY += dy;
-      clampViewerPan();
-      applyViewerTransform();
+      const dx = t[0].clientX - viewerTouchStartX;
+      const dy = t[0].clientY - viewerTouchStartY;
+      if (viewerFitDrag) {
+        viewerSwipeOffset = dx;
+        viewerTranslateX = dx;
+        viewerTranslateY = 0;
+        applyViewerTransform();
+      } else {
+        viewerTranslateX += t[0].clientX - viewerLastTouchX;
+        viewerTranslateY += t[0].clientY - viewerLastTouchY;
+        clampViewerPan();
+        applyViewerTransform();
+      }
       viewerLastTouchX = t[0].clientX;
       viewerLastTouchY = t[0].clientY;
     }
@@ -760,17 +831,20 @@
     if (viewerIsDragging) {
       viewerIsDragging = false;
       const dt = Date.now() - viewerTouchStartTime;
-      const dx = viewerLastTouchX - viewerTouchStartX;
-      const dy = viewerLastTouchY - viewerTouchStartY;
-      const absDx = Math.abs(dx);
-      const absDy = Math.abs(dy);
+      const absDy = Math.abs(viewerLastTouchY - viewerTouchStartY);
+      const absDx = Math.abs(viewerSwipeOffset);
+      const canNav = viewerItems.length > 1;
 
-      const isSwipe = absDx > 50 && absDx > absDy * 2 && dt < 400;
-      const isAtFit = Math.abs(viewerScale - viewerMinScale) < 0.01;
-
-      if (isSwipe && isAtFit && viewerItems.length > 1) {
-        if (dx > 0) navViewer(-1);
-        else navViewer(1);
+      if (viewerFitDrag && canNav && absDx > absDy && absDx > window.innerWidth / 3) {
+        const dir = viewerSwipeOffset > 0 ? -1 : 1;
+        const targetIdx = viewerIndex + dir;
+        if (targetIdx >= 0 && targetIdx < viewerItems.length) {
+          animateViewerOut(dir);
+        } else {
+          animateViewerSnapBack();
+        }
+      } else if (viewerFitDrag && absDx > 10) {
+        animateViewerSnapBack();
       } else if (absDx < 10 && absDy < 10 && dt < 200) {
         closeViewer();
       }
@@ -780,6 +854,7 @@
   function onViewerTouchCancel(e) {
     viewerIsDragging = false;
     viewerIsPinching = false;
+    viewerFitDrag = false;
   }
 
   $('#m-viewer-close').addEventListener('click', closeViewer);

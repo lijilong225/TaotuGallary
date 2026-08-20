@@ -688,6 +688,7 @@ body {
   z-index: 300;
   display: flex;
   flex-direction: column;
+  touch-action: none;
 }
 .m-viewer-close {
   position: absolute;
