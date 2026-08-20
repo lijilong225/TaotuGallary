@@ -2,18 +2,20 @@
 (function () {
   'use strict';
 
-  const state = {
+const state = {
     user: null,
     tree: null,
-    favorites: {},   // favKey -> item
-    favKey: null,    // 'favorites' view marker
+    favorites: {},
+    favKey: null,
     currentPath: '',
-    currentMode: 'dir', // 'dir' | 'archive' | 'favorites'
+    currentMode: 'dir',
     cachedItems: null,
     thumbSize: 'm',
     sortBy: 'time',
     sortOrder: 'desc',
     timeGroup: 'month',
+    pageNum: 1,
+    totalPages: 1,
   };
 
   const $ = (s) => document.querySelector(s);
@@ -359,6 +361,21 @@
     }
 
     renderMedia(media);
+    renderPagination(data);
+  }
+
+  function renderPagination(data) {
+    const pag = data.pagination;
+    if (!pag || pag.totalPages <= 1) {
+      $('#m-pagination').classList.add('hidden');
+      state.pageNum = 1;
+      state.totalPages = 1;
+      return;
+    }
+    state.pageNum = pag.pageNum;
+    state.totalPages = pag.totalPages;
+    $('#m-page-info').textContent = pag.pageNum + '/' + pag.totalPages;
+    $('#m-pagination').classList.remove('hidden');
   }
 
   function renderOnlyMedia(media) {
@@ -385,6 +402,13 @@
     $('#m-sortbar').classList.add('hidden');
     $('#m-content').classList.remove('has-sortbar');
   }
+
+  $('#m-page-prev').addEventListener('click', () => {
+    if (state.pageNum > 1) openDirectory(state.currentPath, state.pageNum - 1);
+  });
+  $('#m-page-next').addEventListener('click', () => {
+    if (state.pageNum < state.totalPages) openDirectory(state.currentPath, state.pageNum + 1);
+  });
 
   function makeFolderCard(f) {
     const card = document.createElement('div');
@@ -812,6 +836,7 @@
   /* ---------------- UI helpers ---------------- */
   function showLoading() {
     hideSortbar();
+    $('#m-pagination').classList.add('hidden');
     $('#m-loading').classList.remove('hidden');
     $('#m-empty').classList.add('hidden');
     $('#m-folders').innerHTML = '';
@@ -821,6 +846,7 @@
 
   function renderEmpty(msg) {
     hideSortbar();
+    $('#m-pagination').classList.add('hidden');
     $('#m-loading').classList.add('hidden');
     $('#m-folders').innerHTML = '';
     $('#m-folders').style.display = 'none';

@@ -581,6 +581,48 @@ body {
   text-shadow: 0 1px 0 rgba(255,255,255,.4);
 }
 
+/* ---------------- Pagination ---------------- */
+.m-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px 12px 32px;
+}
+.m-pagination.hidden { display: none; }
+.m-page-btn {
+  flex: 1;
+  max-width: 140px;
+  padding: 11px 14px;
+  border: 1px solid var(--accent-border);
+  border-radius: 9px;
+  background: linear-gradient(180deg, #9cc270 0%, #6f9c46 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-shadow: 0 1px 1px rgba(0,0,0,.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.32),
+    0 2px 3px rgba(0,0,0,.25);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.m-page-btn:active { transform: translateY(1px); filter: brightness(1.06); }
+.m-page-btn:disabled {
+  opacity: .45;
+  cursor: default;
+  filter: grayscale(.45);
+  transform: none;
+}
+.m-page-info {
+  min-width: 64px;
+  text-align: center;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
+}
+
 /* ---------------- Drawer ---------------- */
 .m-drawer-bg {
   position: fixed;
