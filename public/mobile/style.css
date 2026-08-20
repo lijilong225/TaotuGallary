@@ -690,23 +690,6 @@ body {
   flex-direction: column;
   touch-action: none;
 }
-.m-viewer-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 32px;
-  height: 32px;
-  border: 1px solid rgba(255,255,255,.25);
-  border-radius: 50%;
-  background: rgba(0,0,0,.5);
-  color: #fff;
-  font-size: 16px;
-  z-index: 2;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 .m-viewer-body {
   flex: 1;
   display: flex;
@@ -716,8 +699,7 @@ body {
   touch-action: none;
   position: relative;
 }
-.m-viewer-img,
-.m-viewer-img-bg {
+.m-viewer-img {
   position: absolute;
   left: 50%;
   top: 50%;
@@ -728,9 +710,6 @@ body {
 }
 .m-viewer-img {
   z-index: 2;
-}
-.m-viewer-img-bg {
-  z-index: 1;
 }
 .m-viewer-video {
   width: 100%;

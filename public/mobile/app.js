@@ -570,290 +570,17 @@
   let viewerPinchStartScale = 1;
   let viewerBlobUrl = null;
   let viewerAnimating = false;
-  let viewerFitDrag = false;
-  let viewerSwipeOffset = 0;
-  let viewerSlideInDir = 0;
-  let viewerAdjIndex = -1;
-  let viewerAdjDir = 0;
-  let viewerAdjLoaded = false;
-  let viewerAdjScale = 0;
-
-  const VIEWER_ANIM_MS = 280;
 
   function applyViewerTransform() {
     const img = $('#m-viewer-img');
     img.style.transform = `translate(calc(-50% + ${viewerTranslateX}px), calc(-50% + ${viewerTranslateY}px)) scale(${viewerScale})`;
   }
 
-  function applyTransform(img, x, y, s) {
-    img.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${s})`;
-  }
-
-  function fitScaleFor(nw, nh) {
-    const vw = window.innerWidth, vh = window.innerHeight;
-    if (!nw || !nh) return 1;
-    if (nw <= vw && nh <= vh) return 1;
-    return Math.min(vw / nw, vh / nh);
-  }
-
-  function clampViewerPan() {
-    const img = $('#m-viewer-img');
-    const displayW = img.naturalWidth * viewerScale;
-    const displayH = img.naturalHeight * viewerScale;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const maxX = Math.max(0, (displayW - vw) / 2);
-    const maxY = Math.max(0, (displayH - vh) / 2);
-    viewerTranslateX = Math.max(-maxX, Math.min(maxX, viewerTranslateX));
-    viewerTranslateY = Math.max(-maxY, Math.min(maxY, viewerTranslateY));
-  }
-
-  function calcViewerFitScale() {
-    const img = $('#m-viewer-img');
-    return fitScaleFor(img.naturalWidth, img.naturalHeight);
-  }
-
-  function initViewerImage() {
-    const img = $('#m-viewer-img');
-    img.style.width = img.naturalWidth + 'px';
-    img.style.height = img.naturalHeight + 'px';
-    viewerMinScale = calcViewerFitScale();
-    viewerScale = viewerMinScale;
-    viewerTranslateX = 0;
-    viewerTranslateY = 0;
-    applyViewerTransform();
-
-    const slideIn = img.dataset.slideIn;
-    if (slideIn) {
-      img.dataset.slideIn = '';
-      const fromX = parseInt(slideIn, 10) * window.innerWidth;
-      viewerTranslateX = fromX;
-      viewerTranslateY = 0;
-      img.style.transition = 'none';
-      applyViewerTransform();
-      img.getBoundingClientRect();
-      img.style.transition = `transform ${VIEWER_ANIM_MS}ms cubic-bezier(.2,.8,.3,1)`;
-      viewerTranslateX = 0;
-      applyViewerTransform();
-      setTimeout(() => { img.style.transition = ''; }, VIEWER_ANIM_MS);
-    }
-  }
-
-  function openViewer(item) {
-    const items = state.cachedItems || [];
-    viewerItems = items;
-    viewerIndex = items.indexOf(item);
-    renderViewer(item);
-  }
-
-  function renderViewer(item) {
-    const img = $('#m-viewer-img');
-    const video = $('#m-viewer-video');
-    const spinner = $('#m-viewer-spinner');
-    resetAdjacent();
-    img.classList.add('hidden');
-    video.classList.add('hidden');
-    spinner.classList.remove('hidden');
-    video.removeAttribute('src');
-    video.removeAttribute('srcObject');
-    delete video.dataset.fallback;
-    img.style.transform = '';
-    img.style.width = '';
-    img.style.height = '';
-
-    $('#m-viewer').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    history.pushState({ viewer: true }, '');
-
-    if (item.mime === 'video') {
-      spinner.classList.add('hidden');
-      video.classList.remove('hidden');
-      const url = videoUrl(item);
-      const onError = () => {
-        video.dataset.fallback = '1';
-        fetch(url, { credentials: 'same-origin' }).then(r => {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.blob();
-        }).then(blob => {
-          if (viewerBlobUrl) URL.revokeObjectURL(viewerBlobUrl);
-          video.removeAttribute('src');
-          viewerBlobUrl = URL.createObjectURL(blob);
-          video.src = viewerBlobUrl;
-          video.play().catch(() => {});
-        }).catch(() => {});
-      };
-      video.addEventListener('error', onError, { once: true });
-      video.src = url;
-      video.load();
-      video.play().catch(() => {});
-    } else {
-      img.classList.remove('hidden');
-      img.dataset.loaded = '0';
-      if (viewerSlideInDir) {
-        img.dataset.slideIn = String(viewerSlideInDir);
-        viewerSlideInDir = 0;
-      } else {
-        delete img.dataset.slideIn;
-      }
-      img.onload = () => {
-        if (img.dataset.loaded === '1') return;
-        img.dataset.loaded = '1';
-        $('#m-viewer-spinner').classList.add('hidden');
-        initViewerImage();
-        preloadAdjacent(1);
-      };
-      img.onerror = () => {
-        if (img.dataset.loaded === '1') return;
-        img.dataset.loaded = '1';
-        $('#m-viewer-spinner').classList.add('hidden');
-      };
-      img.src = rawUrl(item);
-      if (img.complete && img.naturalWidth > 0) {
-        img.onload();
-      }
-    }
-  }
-
-  function navViewer(delta) {
-    const idx = viewerIndex + delta;
-    if (idx < 0 || idx >= viewerItems.length) return;
-    viewerIndex = idx;
-    const item = viewerItems[idx];
-    const img = $('#m-viewer-img');
-    const video = $('#m-viewer-video');
-    if (item.mime === 'video') {
-      img.classList.add('hidden');
-      img.removeAttribute('src');
-      delete img.dataset.loaded;
-      video.classList.remove('hidden');
-      video.removeAttribute('src');
-      video.removeAttribute('srcObject');
-      delete video.dataset.fallback;
-      const url = videoUrl(item);
-      const onError = () => {
-        video.dataset.fallback = '1';
-        fetch(url, { credentials: 'same-origin' }).then(r => {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.blob();
-        }).then(blob => {
-          if (viewerBlobUrl) URL.revokeObjectURL(viewerBlobUrl);
-          video.removeAttribute('src');
-          viewerBlobUrl = URL.createObjectURL(blob);
-          video.src = viewerBlobUrl;
-          video.play().catch(() => {});
-        }).catch(() => {});
-      };
-      video.addEventListener('error', onError, { once: true });
-      video.src = url;
-      video.load();
-      video.play().catch(() => {});
-    } else {
-      video.classList.add('hidden');
-      video.pause();
-      video.removeAttribute('src');
-      video.load();
-      if (viewerBlobUrl) { URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl = null; }
-      img.style.width = '';
-      img.style.height = '';
-      img.classList.remove('hidden');
-      img.dataset.loaded = '0';
-      $('#m-viewer-spinner').classList.remove('hidden');
-      if (viewerSlideInDir) {
-        img.dataset.slideIn = String(viewerSlideInDir);
-        viewerSlideInDir = 0;
-      } else {
-        delete img.dataset.slideIn;
-      }
-      img.onload = () => {
-        if (img.dataset.loaded === '1') return;
-        img.dataset.loaded = '1';
-        $('#m-viewer-spinner').classList.add('hidden');
-        initViewerImage();
-        preloadAdjacent(1);
-      };
-      img.onerror = () => {
-        if (img.dataset.loaded === '1') return;
-        img.dataset.loaded = '1';
-        $('#m-viewer-spinner').classList.add('hidden');
-      };
-      img.src = rawUrl(item);
-      if (img.complete && img.naturalWidth > 0) {
-        img.onload();
-      }
-    }
-  }
-
-  function closeViewer() {
-    const video = $('#m-viewer-video');
-    video.pause();
-    video.removeAttribute('src');
-    video.load();
-    if (viewerBlobUrl) { URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl = null; }
-    const img = $('#m-viewer-img');
-    img.src = '';
-    delete img.dataset.loaded;
-    img.style.transition = '';
-    resetAdjacent();
-    viewerAnimating = false;
-    viewerFitDrag = false;
-    viewerSwipeOffset = 0;
-    viewerSlideInDir = 0;
-    $('#m-viewer').classList.add('hidden');
-    document.body.style.overflow = '';
-  }
-
-  /* ---------- Viewer touch gestures ---------- */
-  function animateViewerOut(dir) {
-    const img = $('#m-viewer-img');
-    const bg = $('#m-viewer-img-bg');
-    const vw = window.innerWidth;
-    const toX = dir > 0 ? -vw : vw;
-    viewerAnimating = true;
-    const useBg = viewerAdjLoaded && viewerAdjDir === dir;
-    viewerSlideInDir = useBg ? 0 : dir;
-    img.style.transition = `transform ${VIEWER_ANIM_MS}ms cubic-bezier(.2,.8,.3,1)`;
-    viewerTranslateX = toX;
-    viewerTranslateY = 0;
-    applyViewerTransform();
-    if (useBg) {
-      bg.style.transition = `transform ${VIEWER_ANIM_MS}ms cubic-bezier(.2,.8,.3,1)`;
-      applyTransform(bg, 0, 0, viewerAdjScale);
-    }
-    setTimeout(() => {
-      img.style.transition = '';
-      bg.style.transition = '';
-      navViewer(dir);
-      viewerAnimating = false;
-    }, VIEWER_ANIM_MS);
-  }
-
-  function animateViewerSnapBack() {
-    const img = $('#m-viewer-img');
-    const bg = $('#m-viewer-img-bg');
-    viewerSlideInDir = 0;
-    img.style.transition = `transform ${VIEWER_ANIM_MS}ms cubic-bezier(.2,.8,.3,1)`;
-    viewerTranslateX = 0;
-    viewerTranslateY = 0;
-    applyViewerTransform();
-    if (viewerAdjLoaded) {
-      bg.style.transition = `transform ${VIEWER_ANIM_MS}ms cubic-bezier(.2,.8,.3,1)`;
-      const vw = window.innerWidth;
-      applyTransform(bg, viewerAdjDir > 0 ? vw : -vw, 0, viewerAdjScale);
-    }
-    setTimeout(() => {
-      img.style.transition = '';
-      bg.style.transition = '';
-      resetAdjacent();
-    }, VIEWER_ANIM_MS);
-  }
-
   function onViewerTouchStart(e) {
     if (e.target.tagName === 'VIDEO') return;
-    if (e.target.closest('#m-viewer-close')) return;
     if (viewerAnimating) { e.preventDefault(); return; }
     e.preventDefault();
     const t = e.touches;
-    resetAdjacent();
     if (t.length === 1) {
       viewerIsDragging = true;
       viewerIsPinching = false;
@@ -861,80 +588,16 @@
       viewerTouchStartY = t[0].clientY;
       viewerLastTouchX = t[0].clientX;
       viewerLastTouchY = t[0].clientY;
-      viewerFitDrag = Math.abs(viewerScale - viewerMinScale) < 0.01;
-      viewerSwipeOffset = 0;
     } else if (t.length === 2) {
       viewerIsPinching = true;
       viewerIsDragging = false;
-      viewerFitDrag = false;
       viewerPinchStartDist = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
       viewerPinchStartScale = viewerScale;
     }
   }
 
-  let viewerAdjLoadId = 0;
-
-  function resetAdjacent() {
-    const bg = $('#m-viewer-img-bg');
-    bg.src = '';
-    bg.classList.add('hidden');
-    bg.style.transform = '';
-    bg.style.width = '';
-    bg.style.height = '';
-    delete bg.dataset.loaded;
-    viewerAdjIndex = -1;
-    viewerAdjDir = 0;
-    viewerAdjLoaded = false;
-  }
-
-  function preloadAdjacent(dir) {
-    const idx = viewerIndex + dir;
-    if (idx < 0 || idx >= viewerItems.length) return;
-    const same = viewerAdjIndex === idx && viewerAdjDir === dir;
-    if (same && viewerAdjLoaded) return;
-    const item = viewerItems[idx];
-    if (!item || item.mime === 'video') return;
-    const bg = $('#m-viewer-img-bg');
-    if (!same) {
-      viewerAdjIndex = idx;
-      viewerAdjDir = dir;
-      viewerAdjLoaded = false;
-    }
-    const loadId = ++viewerAdjLoadId;
-    delete bg.dataset.loaded;
-    bg.classList.remove('hidden');
-    bg.onload = () => {
-      if (viewerAdjLoadId !== loadId) return;
-      bg.dataset.loaded = '1';
-      viewerAdjLoaded = true;
-      viewerAdjScale = fitScaleFor(bg.naturalWidth, bg.naturalHeight);
-      bg.style.width = bg.naturalWidth + 'px';
-      bg.style.height = bg.naturalHeight + 'px';
-      setAdjacentTransform(viewerSwipeOffset);
-    };
-    bg.onerror = () => {
-      if (viewerAdjLoadId !== loadId) return;
-      viewerAdjLoaded = false;
-      bg.classList.add('hidden');
-    };
-    if (!same || !bg.src) {
-      bg.src = rawUrl(item);
-    }
-    if (bg.complete && bg.naturalWidth > 0) bg.onload();
-  }
-
-  function setAdjacentTransform(dx) {
-    const bg = $('#m-viewer-img-bg');
-    if (!viewerAdjLoaded) return;
-    const dir = viewerAdjDir;
-    const vw = window.innerWidth;
-    const x = dir > 0 ? vw + dx : -vw + dx;
-    applyTransform(bg, x, 0, viewerAdjScale);
-  }
-
   function onViewerTouchMove(e) {
     if (e.target.tagName === 'VIDEO') return;
-    if (e.target.closest('#m-viewer-close')) return;
     e.preventDefault();
     const t = e.touches;
     if (viewerIsPinching && t.length === 2) {
@@ -943,22 +606,10 @@
       clampViewerPan();
       applyViewerTransform();
     } else if (viewerIsDragging && t.length === 1) {
-      const dx = t[0].clientX - viewerTouchStartX;
-      const dy = t[0].clientY - viewerTouchStartY;
-      if (viewerFitDrag) {
-        viewerSwipeOffset = dx;
-        viewerTranslateX = dx;
-        viewerTranslateY = 0;
-        applyViewerTransform();
-        const dir = dx > 0 ? -1 : 1;
-        preloadAdjacent(dir);
-        setAdjacentTransform(dx);
-      } else {
-        viewerTranslateX += t[0].clientX - viewerLastTouchX;
-        viewerTranslateY += t[0].clientY - viewerLastTouchY;
-        clampViewerPan();
-        applyViewerTransform();
-      }
+      viewerTranslateX += t[0].clientX - viewerLastTouchX;
+      viewerTranslateY += t[0].clientY - viewerLastTouchY;
+      clampViewerPan();
+      applyViewerTransform();
       viewerLastTouchX = t[0].clientX;
       viewerLastTouchY = t[0].clientY;
     }
@@ -966,7 +617,6 @@
 
   function onViewerTouchEnd(e) {
     if (e.target.tagName === 'VIDEO') return;
-    if (e.target.closest('#m-viewer-close')) return;
     e.preventDefault();
 
     if (viewerIsPinching) {
@@ -983,25 +633,10 @@
 
     if (viewerIsDragging) {
       viewerIsDragging = false;
+      const absDx = Math.abs(viewerLastTouchX - viewerTouchStartX);
       const absDy = Math.abs(viewerLastTouchY - viewerTouchStartY);
-      const absDx = Math.abs(viewerSwipeOffset);
-      const canNav = viewerItems.length > 1;
-
-      if (viewerFitDrag && canNav && absDx > absDy && absDx > window.innerWidth / 3) {
-        const dir = viewerSwipeOffset > 0 ? -1 : 1;
-        const targetIdx = viewerIndex + dir;
-        if (targetIdx >= 0 && targetIdx < viewerItems.length) {
-          animateViewerOut(dir);
-        } else {
-          animateViewerSnapBack();
-        }
-      } else if (viewerFitDrag && absDx > 10) {
-        animateViewerSnapBack();
-      } else if (viewerFitDrag && absDx < 10 && absDy < 10) {
-        resetAdjacent();
-        viewerTranslateX = 0;
-        viewerTranslateY = 0;
-        applyViewerTransform();
+      if (absDx < 10 && absDy < 10) {
+        closeViewer();
       }
     }
   }
@@ -1009,10 +644,8 @@
   function onViewerTouchCancel(e) {
     viewerIsDragging = false;
     viewerIsPinching = false;
-    viewerFitDrag = false;
   }
 
-  $('#m-viewer-close').addEventListener('click', closeViewer);
   const viewerEl = $('#m-viewer');
   viewerEl.addEventListener('touchstart', onViewerTouchStart, { passive: false });
   viewerEl.addEventListener('touchmove', onViewerTouchMove, { passive: false });

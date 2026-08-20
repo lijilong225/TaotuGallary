@@ -39,11 +39,11 @@ Entries discovered by the Agent during task execution should follow this format:
   - 用户明确要求暂不提交时，保持改动为未提交状态
 
 [Version File & Tag Workflow]
-- Date: 2026-08-16
-- Context: 用户要求新增 version 文件管理版本号，每次提交自动打 tag
+- Date: 2026-08-20
+- Context: 用户要求新增 version 文件管理版本号，每次提交自动打 tag；后更改为提交后不再自动打 tag
 - Category: Workflow & Collaboration
 - Instructions:
   - 项目根目录 `version` 文件存储当前版本号（如 `1.1.0`），不包含 `v` 前缀
   - 每次代码提交前，先将 `version` 文件中的版本号递增（patch 递增，即 `1.1.0` → `1.1.1`）
   - 版本号递增后，执行 git add / commit / push
-  - CI 自动读取 `version` 文件创建 tag（`v<version>`），无需手动打 tag 和推送
+  - 每次提交完成后不再自动打 git tag（2026-08-20 变更，覆盖之前 CI 自动打 tag 的流程）
