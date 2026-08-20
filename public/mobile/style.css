@@ -114,6 +114,31 @@ body {
 }
 .m-login-box input:focus { border-color: var(--accent-border); }
 .m-error { color: var(--danger); font-size: 13px; margin-bottom: 8px; text-align: left; text-shadow: 0 1px 0 rgba(255,255,255,.5); }
+.m-btn-primary {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 2px;
+  background: linear-gradient(180deg, #9cc270 0%, #6d9c43 55%, #558030 100%);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  cursor: pointer;
+  text-shadow: 0 1px 1px rgba(0,0,0,.3);
+  box-shadow:
+    0 3px 0 #3c5c25,
+    0 5px 12px rgba(40,25,5,.3),
+    inset 0 1px 0 rgba(255,255,255,.4),
+    inset 0 -3px 6px rgba(0,0,0,.15);
+  transition: transform .06s, box-shadow .06s, filter .15s;
+}
+.m-btn-primary:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #3c5c25, inset 0 2px 5px rgba(0,0,0,.3);
+}
 
 /* ---------------- Title bar ---------------- */
 .m-titlebar {
