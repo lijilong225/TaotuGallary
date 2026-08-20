@@ -145,9 +145,9 @@ async function getThumbForArchiveEntry(archivePath, entryName, _width) {
     ? videoCacheKey('archive', archivePath, stat.size, stat.mtimeMs, entryName, genWidth)
     : cacheKey('archive', 'v3', archivePath, stat.size, stat.mtimeMs, entryName, genWidth);
   if (!(await thumbExists(key))) {
-    await coalesceThumb(key, () => generateThumbManaged(() =>
+    await coalesceThumb(key, () => generateThumbManaged(async () =>
       isVideo ? generateThumbFromVideo(video, key, { width: genWidth })
-              : generateThumb(readEntryBuffer(archivePath, archivePath, entryName), key, { width: genWidth })
+              : generateThumb(await readEntryBuffer(archivePath, archivePath, entryName), key, { width: genWidth })
     ));
   }
   return { path: key, mime: 'image/webp' };

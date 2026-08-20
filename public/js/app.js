@@ -17,6 +17,7 @@
 
   const LAYOUT_SIZES = { s: 160, m: 240, l: 320 };
   const MASONRY_GAP = 18;
+  let pendingMetaItem = null;
 
   const state = {
     user: null,
@@ -718,6 +719,11 @@ function applyThumbSize() {
       box.classList.remove('loading');
       box.style.aspectRatio = '';
     });
+    img.addEventListener('error', () => {
+      box.classList.remove('loading');
+      box.style.aspectRatio = '';
+      box.style.background = '#e0d8c8';
+    });
 
     const name = document.createElement('div');
     name.className = 'thumb-name';
@@ -952,11 +958,13 @@ function applyThumbSize() {
         fields.appendChild(infoRow('时长', dur));
       } else {
         fields.appendChild(infoRow('时长', '加载中...'));
-        const onMeta = () => {
-          videoEl.removeEventListener('loadedmetadata', onMeta);
-          if (!isInfoPanelHidden() && state.imageList[state.lbIndex] === item) renderInfoFields(info, item);
-        };
-        videoEl.addEventListener('loadedmetadata', onMeta);
+        if (pendingMetaItem !== item) {
+          pendingMetaItem = item;
+          videoEl.addEventListener('loadedmetadata', () => {
+            pendingMetaItem = null;
+            if (!isInfoPanelHidden() && state.imageList[state.lbIndex] === item) renderInfoFields(info, item);
+          }, { once: true });
+        }
       }
     }
 

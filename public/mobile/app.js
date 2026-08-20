@@ -560,6 +560,7 @@
   let viewerIsPinching = false;
   let viewerPinchStartDist = 0;
   let viewerPinchStartScale = 1;
+  let viewerBlobUrl = null;
 
   function applyViewerTransform() {
     const img = $('#m-viewer-img');
@@ -632,8 +633,10 @@
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.blob();
         }).then(blob => {
+          if (viewerBlobUrl) URL.revokeObjectURL(viewerBlobUrl);
           video.removeAttribute('src');
-          video.src = URL.createObjectURL(blob);
+          viewerBlobUrl = URL.createObjectURL(blob);
+          video.src = viewerBlobUrl;
           video.play().catch(() => {});
         }).catch(() => {});
       };
@@ -643,14 +646,19 @@
       video.play().catch(() => {});
     } else {
       img.classList.remove('hidden');
+      img.dataset.loaded = '0';
       img.onload = () => {
-        img.onload = null;
+        if (img.dataset.loaded === '1') return;
+        img.dataset.loaded = '1';
         initViewerImage();
       };
+      img.onerror = () => {
+        if (img.dataset.loaded === '1') return;
+        img.dataset.loaded = '1';
+      };
       img.src = rawUrl(item);
-      if (img.complete) {
-        img.onload = null;
-        initViewerImage();
+      if (img.complete && img.naturalWidth > 0) {
+        img.onload();
       }
     }
   }
@@ -667,7 +675,9 @@
     video.pause();
     video.removeAttribute('src');
     video.load();
+    if (viewerBlobUrl) { URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl = null; }
     $('#m-viewer-img').src = '';
+    delete $('#m-viewer-img').dataset.loaded;
     $('#m-viewer').classList.add('hidden');
     document.body.style.overflow = '';
   }
@@ -751,6 +761,11 @@
     }
   }
 
+  function onViewerTouchCancel(e) {
+    viewerIsDragging = false;
+    viewerIsPinching = false;
+  }
+
   $('#m-viewer-close').addEventListener('click', closeViewer);
   $('#m-viewer').addEventListener('click', (e) => {
     if (e.target === $('#m-viewer') || e.target.classList.contains('m-viewer-body')) closeViewer();
@@ -759,6 +774,7 @@
   viewerEl.addEventListener('touchstart', onViewerTouchStart, { passive: false });
   viewerEl.addEventListener('touchmove', onViewerTouchMove, { passive: false });
   viewerEl.addEventListener('touchend', onViewerTouchEnd, { passive: false });
+  viewerEl.addEventListener('touchcancel', onViewerTouchCancel, { passive: false });
 
   /* ---------------- Sortbar ---------------- */
   function sortOrderArrow() {
