@@ -468,45 +468,32 @@ body {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px;
+  padding: 0 10px;
 }
 @media (min-width: 600px) {
   .m-masonry { grid-template-columns: repeat(3, 1fr); }
 }
 .m-item {
   position: relative;
-  background: #fff;
-  border-radius: 6px;
-  padding: 5px;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
   cursor: zoom-in;
   box-shadow:
-    0 3px 7px rgba(60,45,20,.3),
-    0 0 0 1px rgba(60,45,20,.14),
-    inset 0 0 0 1px rgba(0,0,0,.05);
+    0 2px 6px rgba(60,45,20,.28),
+    0 0 0 1px rgba(60,45,20,.12);
   transition: transform .12s, box-shadow .12s, filter .15s;
-}
-.m-item::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  left: 50%;
-  transform: translateX(-50%) rotate(2deg);
-  width: 48px;
-  height: 11px;
-  background: linear-gradient(180deg, rgba(235,225,196,.95), rgba(196,182,146,.95));
-  border: 1px solid rgba(160,140,95,.4);
-  border-radius: 2px;
-  box-shadow: 0 1px 2px rgba(60,45,20,.25);
-  z-index: 1;
+  background: #eee;
 }
 .m-item:active {
-  transform: translateY(0);
-  filter: brightness(.98);
+  transform: scale(.97);
+  filter: brightness(.95);
 }
 .m-item img {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
-  border-radius: 3px;
+  object-fit: cover;
   background: #eee;
 }
 .m-item-video-badge {
@@ -514,8 +501,8 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(222,222,215,.92));
   border: 2px solid rgba(0,0,0,.2);
@@ -529,8 +516,8 @@ body {
 }
 .m-item-fav {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 8px;
+  right: 8px;
   z-index: 5;
   width: 28px;
   height: 28px;
