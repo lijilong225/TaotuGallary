@@ -576,6 +576,124 @@
     img.style.transform = `translate(calc(-50% + ${viewerTranslateX}px), calc(-50% + ${viewerTranslateY}px)) scale(${viewerScale})`;
   }
 
+  function fitScaleFor(nw, nh) {
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (!nw || !nh) return 1;
+    if (nw <= vw && nh <= vh) return 1;
+    return Math.min(vw / nw, vh / nh);
+  }
+
+  function clampViewerPan() {
+    const img = $('#m-viewer-img');
+    const displayW = img.naturalWidth * viewerScale;
+    const displayH = img.naturalHeight * viewerScale;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const maxX = Math.max(0, (displayW - vw) / 2);
+    const maxY = Math.max(0, (displayH - vh) / 2);
+    viewerTranslateX = Math.max(-maxX, Math.min(maxX, viewerTranslateX));
+    viewerTranslateY = Math.max(-maxY, Math.min(maxY, viewerTranslateY));
+  }
+
+  function calcViewerFitScale() {
+    const img = $('#m-viewer-img');
+    return fitScaleFor(img.naturalWidth, img.naturalHeight);
+  }
+
+  function initViewerImage() {
+    const img = $('#m-viewer-img');
+    img.style.width = img.naturalWidth + 'px';
+    img.style.height = img.naturalHeight + 'px';
+    viewerMinScale = calcViewerFitScale();
+    viewerScale = viewerMinScale;
+    viewerTranslateX = 0;
+    viewerTranslateY = 0;
+    applyViewerTransform();
+  }
+
+  function openViewer(item) {
+    const items = state.cachedItems || [];
+    viewerItems = items;
+    viewerIndex = items.indexOf(item);
+    renderViewer(item);
+  }
+
+  function renderViewer(item) {
+    const img = $('#m-viewer-img');
+    const video = $('#m-viewer-video');
+    const spinner = $('#m-viewer-spinner');
+    img.classList.add('hidden');
+    video.classList.add('hidden');
+    spinner.classList.remove('hidden');
+    video.removeAttribute('src');
+    video.removeAttribute('srcObject');
+    delete video.dataset.fallback;
+    img.style.transform = '';
+    img.style.width = '';
+    img.style.height = '';
+
+    $('#m-viewer').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    history.pushState({ viewer: true }, '');
+
+    if (item.mime === 'video') {
+      spinner.classList.add('hidden');
+      video.classList.remove('hidden');
+      const url = videoUrl(item);
+      const onError = () => {
+        video.dataset.fallback = '1';
+        fetch(url, { credentials: 'same-origin' }).then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.blob();
+        }).then(blob => {
+          if (viewerBlobUrl) URL.revokeObjectURL(viewerBlobUrl);
+          video.removeAttribute('src');
+          viewerBlobUrl = URL.createObjectURL(blob);
+          video.src = viewerBlobUrl;
+          video.play().catch(() => {});
+        }).catch(() => {});
+      };
+      video.addEventListener('error', onError, { once: true });
+      video.src = url;
+      video.load();
+      video.play().catch(() => {});
+    } else {
+      img.classList.remove('hidden');
+      img.dataset.loaded = '0';
+      delete img.dataset.slideIn;
+      img.onload = () => {
+        if (img.dataset.loaded === '1') return;
+        img.dataset.loaded = '1';
+        $('#m-viewer-spinner').classList.add('hidden');
+        initViewerImage();
+      };
+      img.onerror = () => {
+        if (img.dataset.loaded === '1') return;
+        img.dataset.loaded = '1';
+        $('#m-viewer-spinner').classList.add('hidden');
+      };
+      img.src = rawUrl(item);
+      if (img.complete && img.naturalWidth > 0) {
+        img.onload();
+      }
+    }
+  }
+
+  function closeViewer() {
+    const video = $('#m-viewer-video');
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+    if (viewerBlobUrl) { URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl = null; }
+    const img = $('#m-viewer-img');
+    img.src = '';
+    delete img.dataset.loaded;
+    img.style.transition = '';
+    viewerAnimating = false;
+    $('#m-viewer').classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
   function onViewerTouchStart(e) {
     if (e.target.tagName === 'VIDEO') return;
     if (viewerAnimating) { e.preventDefault(); return; }
