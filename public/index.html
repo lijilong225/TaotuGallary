@@ -6,6 +6,11 @@
   <title>套图管理器</title>
   <link rel="stylesheet" href="/css/style.css?v=20260817f">
   <script src="/js/icons.js?v=20260817f"></script>
+  <script>
+    if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && window.innerWidth < 768) {
+      location.href = '/mobile/';
+    }
+  </script>
 </head>
 <body>
   <div id="login-view" class="login-view hidden">
