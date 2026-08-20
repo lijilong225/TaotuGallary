@@ -544,9 +544,61 @@
   }
 
   /* ---------------- Viewer ---------------- */
-  let viewerTimer = null;
   let viewerItems = [];
   let viewerIndex = -1;
+  let viewerScale = 1;
+  let viewerTranslateX = 0;
+  let viewerTranslateY = 0;
+  let viewerMinScale = 1;
+  let viewerMaxScale = 5;
+  let viewerTouchStartX = 0;
+  let viewerTouchStartY = 0;
+  let viewerTouchStartTime = 0;
+  let viewerLastTouchX = 0;
+  let viewerLastTouchY = 0;
+  let viewerIsDragging = false;
+  let viewerIsPinching = false;
+  let viewerPinchStartDist = 0;
+  let viewerPinchStartScale = 1;
+
+  function applyViewerTransform() {
+    const img = $('#m-viewer-img');
+    img.style.transform = `translate(${viewerTranslateX}px, ${viewerTranslateY}px) scale(${viewerScale})`;
+  }
+
+  function clampViewerPan() {
+    const img = $('#m-viewer-img');
+    const displayW = img.naturalWidth * viewerScale;
+    const displayH = img.naturalHeight * viewerScale;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const maxX = Math.max(0, (displayW - vw) / 2);
+    const maxY = Math.max(0, (displayH - vh) / 2);
+    viewerTranslateX = Math.max(-maxX, Math.min(maxX, viewerTranslateX));
+    viewerTranslateY = Math.max(-maxY, Math.min(maxY, viewerTranslateY));
+  }
+
+  function calcViewerFitScale() {
+    const img = $('#m-viewer-img');
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const nw = img.naturalWidth;
+    const nh = img.naturalHeight;
+    if (!nw || !nh) return 1;
+    if (nw <= vw && nh <= vh) return 1;
+    return Math.min(vw / nw, vh / nh);
+  }
+
+  function initViewerImage() {
+    const img = $('#m-viewer-img');
+    img.style.width = img.naturalWidth + 'px';
+    img.style.height = img.naturalHeight + 'px';
+    viewerMinScale = calcViewerFitScale();
+    viewerScale = viewerMinScale;
+    viewerTranslateX = 0;
+    viewerTranslateY = 0;
+    applyViewerTransform();
+  }
 
   function openViewer(item) {
     const items = state.cachedItems || [];
@@ -563,27 +615,17 @@
     video.removeAttribute('src');
     video.removeAttribute('srcObject');
     delete video.dataset.fallback;
+    img.style.transform = '';
+    img.style.width = '';
+    img.style.height = '';
 
     $('#m-viewer').classList.remove('hidden');
     document.body.style.overflow = 'hidden';
     history.pushState({ viewer: true }, '');
 
     if (item.mime === 'video') {
-      $('#m-viewer-prev').classList.add('hidden');
-      $('#m-viewer-next').classList.add('hidden');
-    } else if (viewerItems.length > 1) {
-      $('#m-viewer-prev').classList.toggle('hidden', viewerIndex <= 0);
-      $('#m-viewer-next').classList.toggle('hidden', viewerIndex >= viewerItems.length - 1);
-    } else {
-      $('#m-viewer-prev').classList.add('hidden');
-      $('#m-viewer-next').classList.add('hidden');
-    }
-
-    if (item.mime === 'video') {
-      const url = videoUrl(item);
-      /* 优先直接设置流式 src：同源请求会自动携带 session cookie，
-         服务器支持 Range 流式传输，浏览器可边下边播 */
       video.classList.remove('hidden');
+      const url = videoUrl(item);
       const onError = () => {
         video.dataset.fallback = '1';
         fetch(url, { credentials: 'same-origin' }).then(r => {
@@ -601,7 +643,15 @@
       video.play().catch(() => {});
     } else {
       img.classList.remove('hidden');
+      img.onload = () => {
+        img.onload = null;
+        initViewerImage();
+      };
       img.src = rawUrl(item);
+      if (img.complete) {
+        img.onload = null;
+        initViewerImage();
+      }
     }
   }
 
@@ -622,12 +672,93 @@
     document.body.style.overflow = '';
   }
 
+  /* ---------- Viewer touch gestures ---------- */
+  function onViewerTouchStart(e) {
+    if (e.target.tagName === 'VIDEO') return;
+    if (e.target.closest('#m-viewer-close')) return;
+    e.preventDefault();
+    const t = e.touches;
+    if (t.length === 1) {
+      viewerIsDragging = true;
+      viewerIsPinching = false;
+      viewerTouchStartX = t[0].clientX;
+      viewerTouchStartY = t[0].clientY;
+      viewerLastTouchX = t[0].clientX;
+      viewerLastTouchY = t[0].clientY;
+      viewerTouchStartTime = Date.now();
+    } else if (t.length === 2) {
+      viewerIsPinching = true;
+      viewerIsDragging = false;
+      viewerPinchStartDist = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+      viewerPinchStartScale = viewerScale;
+    }
+  }
+
+  function onViewerTouchMove(e) {
+    if (e.target.tagName === 'VIDEO') return;
+    e.preventDefault();
+    const t = e.touches;
+    if (viewerIsPinching && t.length === 2) {
+      const dist = Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+      viewerScale = Math.max(viewerMinScale, Math.min(viewerMaxScale, viewerPinchStartScale * (dist / viewerPinchStartDist)));
+      clampViewerPan();
+      applyViewerTransform();
+    } else if (viewerIsDragging && t.length === 1) {
+      const dx = t[0].clientX - viewerLastTouchX;
+      const dy = t[0].clientY - viewerLastTouchY;
+      viewerTranslateX += dx;
+      viewerTranslateY += dy;
+      clampViewerPan();
+      applyViewerTransform();
+      viewerLastTouchX = t[0].clientX;
+      viewerLastTouchY = t[0].clientY;
+    }
+  }
+
+  function onViewerTouchEnd(e) {
+    if (e.target.tagName === 'VIDEO') return;
+    e.preventDefault();
+
+    if (viewerIsPinching) {
+      viewerIsPinching = false;
+      const fit = calcViewerFitScale();
+      if (viewerScale < fit) {
+        viewerScale = fit;
+        viewerTranslateX = 0;
+        viewerTranslateY = 0;
+        applyViewerTransform();
+      }
+      return;
+    }
+
+    if (viewerIsDragging) {
+      viewerIsDragging = false;
+      const dt = Date.now() - viewerTouchStartTime;
+      const dx = viewerLastTouchX - viewerTouchStartX;
+      const dy = viewerLastTouchY - viewerTouchStartY;
+      const absDx = Math.abs(dx);
+      const absDy = Math.abs(dy);
+
+      const isSwipe = absDx > 50 && absDx > absDy * 2 && dt < 400;
+      const isAtFit = Math.abs(viewerScale - viewerMinScale) < 0.01;
+
+      if (isSwipe && isAtFit && viewerItems.length > 1) {
+        if (dx > 0) navViewer(-1);
+        else navViewer(1);
+      } else if (absDx < 10 && absDy < 10 && dt < 200) {
+        closeViewer();
+      }
+    }
+  }
+
   $('#m-viewer-close').addEventListener('click', closeViewer);
-  $('#m-viewer-prev').addEventListener('click', () => navViewer(-1));
-  $('#m-viewer-next').addEventListener('click', () => navViewer(1));
   $('#m-viewer').addEventListener('click', (e) => {
     if (e.target === $('#m-viewer') || e.target.classList.contains('m-viewer-body')) closeViewer();
   });
+  const viewerEl = $('#m-viewer');
+  viewerEl.addEventListener('touchstart', onViewerTouchStart, { passive: false });
+  viewerEl.addEventListener('touchmove', onViewerTouchMove, { passive: false });
+  viewerEl.addEventListener('touchend', onViewerTouchEnd, { passive: false });
 
   /* ---------------- Sortbar ---------------- */
   function sortOrderArrow() {
