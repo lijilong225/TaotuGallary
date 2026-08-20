@@ -720,6 +720,7 @@
 
   function onViewerTouchMove(e) {
     if (e.target.tagName === 'VIDEO') return;
+    if (e.target.closest('#m-viewer-close')) return;
     e.preventDefault();
     const t = e.touches;
     if (viewerIsPinching && t.length === 2) {
@@ -741,6 +742,7 @@
 
   function onViewerTouchEnd(e) {
     if (e.target.tagName === 'VIDEO') return;
+    if (e.target.closest('#m-viewer-close')) return;
     e.preventDefault();
 
     if (viewerIsPinching) {
