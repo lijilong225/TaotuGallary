@@ -700,6 +700,7 @@
         img.dataset.loaded = '1';
         $('#m-viewer-spinner').classList.add('hidden');
         initViewerImage();
+        preloadAdjacent(1);
       };
       img.onerror = () => {
         if (img.dataset.loaded === '1') return;
@@ -717,7 +718,69 @@
     const idx = viewerIndex + delta;
     if (idx < 0 || idx >= viewerItems.length) return;
     viewerIndex = idx;
-    renderViewer(viewerItems[idx]);
+    const item = viewerItems[idx];
+    const img = $('#m-viewer-img');
+    const video = $('#m-viewer-video');
+    if (item.mime === 'video') {
+      img.classList.add('hidden');
+      img.removeAttribute('src');
+      delete img.dataset.loaded;
+      video.classList.remove('hidden');
+      video.removeAttribute('src');
+      video.removeAttribute('srcObject');
+      delete video.dataset.fallback;
+      const url = videoUrl(item);
+      const onError = () => {
+        video.dataset.fallback = '1';
+        fetch(url, { credentials: 'same-origin' }).then(r => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.blob();
+        }).then(blob => {
+          if (viewerBlobUrl) URL.revokeObjectURL(viewerBlobUrl);
+          video.removeAttribute('src');
+          viewerBlobUrl = URL.createObjectURL(blob);
+          video.src = viewerBlobUrl;
+          video.play().catch(() => {});
+        }).catch(() => {});
+      };
+      video.addEventListener('error', onError, { once: true });
+      video.src = url;
+      video.load();
+      video.play().catch(() => {});
+    } else {
+      video.classList.add('hidden');
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+      if (viewerBlobUrl) { URL.revokeObjectURL(viewerBlobUrl); viewerBlobUrl = null; }
+      img.style.width = '';
+      img.style.height = '';
+      img.classList.remove('hidden');
+      img.dataset.loaded = '0';
+      $('#m-viewer-spinner').classList.remove('hidden');
+      if (viewerSlideInDir) {
+        img.dataset.slideIn = String(viewerSlideInDir);
+        viewerSlideInDir = 0;
+      } else {
+        delete img.dataset.slideIn;
+      }
+      img.onload = () => {
+        if (img.dataset.loaded === '1') return;
+        img.dataset.loaded = '1';
+        $('#m-viewer-spinner').classList.add('hidden');
+        initViewerImage();
+        preloadAdjacent(1);
+      };
+      img.onerror = () => {
+        if (img.dataset.loaded === '1') return;
+        img.dataset.loaded = '1';
+        $('#m-viewer-spinner').classList.add('hidden');
+      };
+      img.src = rawUrl(item);
+      if (img.complete && img.naturalWidth > 0) {
+        img.onload();
+      }
+    }
   }
 
   function closeViewer() {
@@ -827,13 +890,16 @@
   function preloadAdjacent(dir) {
     const idx = viewerIndex + dir;
     if (idx < 0 || idx >= viewerItems.length) return;
-    if (viewerAdjIndex === idx && viewerAdjDir === dir) return;
+    const same = viewerAdjIndex === idx && viewerAdjDir === dir;
+    if (same && viewerAdjLoaded) return;
     const item = viewerItems[idx];
     if (!item || item.mime === 'video') return;
     const bg = $('#m-viewer-img-bg');
-    viewerAdjIndex = idx;
-    viewerAdjDir = dir;
-    viewerAdjLoaded = false;
+    if (!same) {
+      viewerAdjIndex = idx;
+      viewerAdjDir = dir;
+      viewerAdjLoaded = false;
+    }
     const loadId = ++viewerAdjLoadId;
     delete bg.dataset.loaded;
     bg.classList.remove('hidden');
@@ -851,7 +917,9 @@
       viewerAdjLoaded = false;
       bg.classList.add('hidden');
     };
-    bg.src = rawUrl(item);
+    if (!same || !bg.src) {
+      bg.src = rawUrl(item);
+    }
     if (bg.complete && bg.naturalWidth > 0) bg.onload();
   }
 
