@@ -1,7 +1,7 @@
 {
   "name": "gallery-manager",
   "version": "1.0.0",
-  "description": "套图管理器 - 基于 Web 的图片套图浏览与管理工具",
+  "description": "视图浏览器 - 基于 Web 的图片浏览与管理工具",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
